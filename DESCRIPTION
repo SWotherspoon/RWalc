@@ -1,0 +1,27 @@
+Package: RWalc
+Type: Package
+Title: Continuous-Time Correlated Random Walk Models for Animal Movement
+Version: 0.1.0
+Authors@R: c(
+    as.person("Simon Wotherspoon <Simon.Wotherspoon@utas.edu.au> [aut,cre]"),
+    as.person("Ben Raymond <Ben.Raymond@add.gov.au> [aut]"))
+Description: Continuous time correlated random walk models for animal
+    tracking data.  Provides facilities for fitting an
+    Ornstein-Uhlenbeck process model to animal tracking data (similar
+    to the crawl package), and simulating tracks from the fitted model.
+Depends:
+    R(>= 3.3.0),
+    TMB
+Suggests:
+    knitr
+Imports:
+    stats,
+    png
+LinkingTo:
+    TMB,
+    RcppEigen
+License: Mozilla Public License 2.0
+LazyData: TRUE
+VignetteBuilder: knitr
+RoxygenNote: 5.0.1
+
