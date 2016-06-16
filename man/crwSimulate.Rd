@@ -5,7 +5,7 @@
 \title{Regressive bridge sampler}
 \usage{
 crwSimulate(data, par, fixed = NULL, fixed.err = diag(1e-06, 4, 4),
-  point.check = function(tm, lon, lat) TRUE)
+  point.check = function(tm, x, y) TRUE)
 }
 \arguments{
 \item{data}{A dataframe representing the template track.}
@@ -17,18 +17,17 @@ template path are to be held fixed.}
 
 \item{fixed.err}{Covariance matrix for fixed points.}
 
-\item{point.check}{A function that accepts a time, longitude and
-latitude and returns boolean indicating whether the state is
-acceptable.}
+\item{point.check}{A function that accepts a time, x and y and
+returns boolean indicating whether the state is acceptable.}
 }
 \value{
 Returns a dataframe representing the simulated track with
   columns
-  \item{\code{date}}{time as POSIXct}
-  \item{\code{lon}}{longitude}
-  \item{\code{lat}}{latitude}
-  \item{\code{vlon}}{longitudinal velocity}
-  \item{\code{vlat}}{latitudinal velocity}
+  \item{t}{time (as GMT POSIXct)}
+  \item{x}{x coordinate}
+  \item{y}{y coordinate}
+  \item{x.v}{x component of velocity}
+  \item{y.v}{y component of velocity}
 }
 \description{
 Generate new tracks from a CRW model
@@ -56,11 +55,11 @@ acccurately the simulated track reproduces the four components
 
 Additional constraints can be placed on the path by rejection
 sampling through the function \code{point.check}.  This function
-must accept a time, longitude and latitude and return a boolean
-indicating whether the point is acceptable.  For example, the
-track can be constrained to the ocean by supplying a
-\code{point.check} function that compares the state to a land mask
-and returns \code{FALSE} for locations on land.
+must accept a time, x and y and return a boolean indicating
+whether the point is acceptable.  For example, the track can be
+constrained to the ocean by supplying a \code{point.check}
+function that compares the state to a land mask and returns
+\code{FALSE} for locations on land.
 
 Tracks are simulated in the plane.  There is is no polar
 correction and without a suitable \code{point.check} function,

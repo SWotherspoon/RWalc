@@ -4,7 +4,7 @@
 \alias{crw}
 \title{Correlated Random Walk Filter}
 \usage{
-crw(data, predict.date = NULL, par = c(1, 1, 1, 1, 1, 1),
+crw(data, predict.time = NULL, par = c(1, 1, 1, 1, 1, 1),
   corPar = c("free", "equal", "fixed"), errPar = c("free", "equal",
   "fixed"), tdf = -1, verbose = FALSE, control = list(eval.max = 2000,
   iter.max = 1500, rel.tol = 0.001, x.tol = 0.015))
@@ -12,15 +12,15 @@ crw(data, predict.date = NULL, par = c(1, 1, 1, 1, 1, 1),
 \arguments{
 \item{data}{A dataframe representing the track (see details).}
 
-\item{predict.date}{Times at which to predict locations (POSIXct).}
+\item{predict.time}{Times at which to predict locations (POSIXct).}
 
 \item{par}{Vector of initial parameter estimates.}
 
-\item{corPar}{Controls the autocorrelaion parameter for
-longitudinal and latitudinal processes.}
+\item{corPar}{Controls the autocorrelaion parameter for x and y
+processes.}
 
 \item{errPar}{Controls the scaling parameter for the observational
-errors for the longitudinal and latitudinal processes.}
+errors for the x and y processes}
 
 \item{tdf}{Degrees of freedom for the multivariate t error
 distribution.}
@@ -37,17 +37,17 @@ Returns a list with components
   \item{\code{opt}}{the object returned by the optimizer}
   \item{\code{tmb}}{the \pkg{TMB} object}
 The \code{track} dataframe has columns
-  \item{\code{date}}{time (as GMT POSIXct)}
-  \item{\code{lon}}{longitude}
-  \item{\code{lat}}{latitude}
-  \item{\code{vlon}}{longitudal velocity}
-  \item{\code{vlat}}{latitudinal velocity}
-  \item{\code{lon.se}}{standard error of longitude}
-  \item{\code{lat.se}}{standard error of latitude}
-  \item{\code{vlon.se}}{standard error of longitudinal velocity}
-  \item{\code{vlat.se}}{standard error of latitudinal velocity}
-  \item{\code{observed}}{whether this was an observed time}
-  \item{\code{predicted}}{whether this was an prediction time}
+  \item{t}{time (as GMT POSIXct)}
+  \item{x}{x coordinate}
+  \item{y}{y coordinate}
+  \item{x.v}{x component of velocity}
+  \item{y.v}{y component of velocity}
+  \item{x.se}{standard error of x coordinate}
+  \item{y.se}{standard error of y coordinate}
+  \item{x.v.se}{standard error of x component of velocity}
+  \item{y.v.se}{standard error of x component of velocity}
+  \item{observed}{whether this was an observed time}
+  \item{predicted}{whether this was an prediction time}
 }
 \description{
 Correlated Random Walk Filter
@@ -62,27 +62,26 @@ Albertsen et al. (2015) if `tdf` is positive.
 The input track must be given as a dataframe where each row is an
 observed location, with columns
 \tabular{ll}{
-\code{date} \tab observation time (as GMT POSIXct) \cr
-\code{lon} \tab observed longitude \cr
-\code{lat} \tab observed latitude \cr
-\code{lon.se} \tab standard error of longitude (optional) \cr
-\code{lat.se} \tab standard error of latitude (optional) \cr
+date \tab observation time (as GMT POSIXct) \cr
+x \tab observed x coordinate \cr
+y \tab observed y coordinate \cr
+x.se \tab standard error of the x coordinate (optional) \cr
+y.se \tab standard error of the y coordinate (optional) \cr
 }
 
-The filtering model assumes the errors in longitude and latitude
-are have standard deviations \code{lon.se} and \code{lat.se}
-scaled by the \eqn{\sigma_{y}}{sigmaY} model parameters. If these
-columns are missing, they are assumed to be 1.
+The filtering model assumes the errors in the spatial coordinates
+are have standard deviations 'x.se' and 'y.se' scaled by
+the \eqn{\sigma_{y}}{sigmaY} model parameters. If these columns
+are missing, they are assumed to be 1.
 
 The \code{corPar} and \code{errPar} arguments control how the
 correlation parameters \eqn{\beta}{beta} and the error scaling
-parameters \eqn{\sigma_{y}}{sigmaY} apply to the longitudinal
-and latitudinal processes:
+parameters \eqn{\sigma_{y}}{sigmaY} apply to the x and y processes:
 \tabular{ll}{
 \code{"free"} \tab independent parameters are estimated for
-    longitude and latitude \cr
+    x and y \cr
 \code{"equal"} \tab a common parameter is estimated for both
-    longitude and latitude \cr
+    x and y \cr
 \code{"fixed"} \tab the parameters are determined by \code{par}
 }
 }

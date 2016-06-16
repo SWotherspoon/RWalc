@@ -4,16 +4,17 @@
 \alias{argosScale}
 \title{ARGOS Error Scale Factors}
 \usage{
-argosScale(lc)
+argosScale(data, class)
 }
 \arguments{
-\item{lc}{Argos error classes.}
+\item{data}{A dataframe representing the track (see details).}
+
+\item{class}{Column in data containing the Argos location classes.}
 }
 \value{
-A dataframe with columns
-\item{\code{lc}}{ARGOS location class}
-\item{\code{lon.se}}{error scaling factor for longitude}
-\item{\code{lat.se}}{error scaling factor for latitude}
+The input dataframe with the appended columns
+\item{\code{x.se}}{error scaling factor for longitude}
+\item{\code{y.se}}{error scaling factor for latitude}
 }
 \description{
 ARGOS Error Scale Factors for Location Classes
@@ -22,5 +23,8 @@ ARGOS Error Scale Factors for Location Classes
 Create a dataframe of the multiplicative scaling factors for
 scaling location accuracy from the reported Argos location class.
 These are the as used in \pkg{crawl}.
+
+This function requires that the "x" coordinate represents
+longitude and the "y" coordinate represents latitude.
 }
 

@@ -14,22 +14,22 @@ interpolateTrack(data, tstep = 60 * 60)
 \value{
 a dataframe with columns
   \item{\code{date}}{observation time (as POSIXct)}
-  \item{\code{lon}}{interpolated longitude}
-  \item{\code{lat}}{interpolated latitude}
+  \item{\code{x}}{interpolated x coordinate}
+  \item{\code{y}}{interpolated y coordinate}
 }
 \description{
 Resample a Track by Linear Interpolation
 }
 \details{
-Linearly interpolate in longitude and latitude to resample a track
-back to a regular time step.
+Linearly interpolate in the spatial coordinates to resample a
+track back to a regular time step.
 
-The input track is given as a dataframe where each row is an
-observed location, with (at minimum) columns
+The input track must be given as a dataframe where each row is an
+observed location, with columns
 \tabular{ll}{
-\code{date} \tab observation time (as GMT POSIXct) \cr
-\code{lon} \tab observed longitude \cr
-\code{lat} \tab observed latitude \cr
+t \tab observation time (as GMT POSIXct) \cr
+x \tab observed x coordinate \cr
+y \tab observed y coordinate \cr
 }
 }
 
