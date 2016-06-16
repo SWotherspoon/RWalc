@@ -35,38 +35,37 @@ unwrapLon <- function(lon,lmin=-180)
 ##' The input track must be given as a dataframe where each row is an
 ##' observed location, with columns
 ##' \tabular{ll}{
-##' \code{date} \tab observation time (as GMT POSIXct) \cr
-##' \code{lon} \tab observed longitude \cr
-##' \code{lat} \tab observed latitude \cr
-##' \code{lon.se} \tab standard error of longitude (optional) \cr
-##' \code{lat.se} \tab standard error of latitude (optional) \cr
+##' date \tab observation time (as GMT POSIXct) \cr
+##' x \tab observed x coordinate \cr
+##' y \tab observed y coordinate \cr
+##' x.se \tab standard error of the x coordinate (optional) \cr
+##' y.se \tab standard error of the y coordinate (optional) \cr
 ##' }
 ##'
-##' The filtering model assumes the errors in longitude and latitude
-##' are have standard deviations \code{lon.se} and \code{lat.se}
-##' scaled by the \eqn{\sigma_{y}}{sigmaY} model parameters. If these
-##' columns are missing, they are assumed to be 1.
+##' The filtering model assumes the errors in the spatial coordinates
+##' are have standard deviations 'x.se' and 'y.se' scaled by
+##' the \eqn{\sigma_{y}}{sigmaY} model parameters. If these columns
+##' are missing, they are assumed to be 1.
 ##'
 ##' The \code{corPar} and \code{errPar} arguments control how the
 ##' correlation parameters \eqn{\beta}{beta} and the error scaling
-##' parameters \eqn{\sigma_{y}}{sigmaY} apply to the longitudinal
-##' and latitudinal processes:
+##' parameters \eqn{\sigma_{y}}{sigmaY} apply to the x and y processes:
 ##' \tabular{ll}{
 ##' \code{"free"} \tab independent parameters are estimated for
-##'     longitude and latitude \cr
+##'     x and y \cr
 ##' \code{"equal"} \tab a common parameter is estimated for both
-##'     longitude and latitude \cr
+##'     x and y \cr
 ##' \code{"fixed"} \tab the parameters are determined by \code{par}
 ##' }
 ##'
 ##' @title Correlated Random Walk Filter
 ##' @param data A dataframe representing the track (see details).
-##' @param predict.date Times at which to predict locations (POSIXct).
+##' @param predict.time Times at which to predict locations (POSIXct).
 ##' @param par Vector of initial parameter estimates.
-##' @param corPar Controls the autocorrelaion parameter for
-##'   longitudinal and latitudinal processes.
+##' @param corPar Controls the autocorrelaion parameter for x and y
+##'   processes.
 ##' @param errPar Controls the scaling parameter for the observational
-##'   errors for the longitudinal and latitudinal processes.
+##'   errors for the x and y processes
 ##' @param tdf Degrees of freedom for the multivariate t error
 ##'   distribution.
 ##' @param verbose Enable tracing information.
@@ -78,17 +77,17 @@ unwrapLon <- function(lon,lmin=-180)
 ##'   \item{\code{opt}}{the object returned by the optimizer}
 ##'   \item{\code{tmb}}{the \pkg{TMB} object}
 ##' The \code{track} dataframe has columns
-##'   \item{\code{date}}{time (as GMT POSIXct)}
-##'   \item{\code{lon}}{longitude}
-##'   \item{\code{lat}}{latitude}
-##'   \item{\code{vlon}}{longitudal velocity}
-##'   \item{\code{vlat}}{latitudinal velocity}
-##'   \item{\code{lon.se}}{standard error of longitude}
-##'   \item{\code{lat.se}}{standard error of latitude}
-##'   \item{\code{vlon.se}}{standard error of longitudinal velocity}
-##'   \item{\code{vlat.se}}{standard error of latitudinal velocity}
-##'   \item{\code{observed}}{whether this was an observed time}
-##'   \item{\code{predicted}}{whether this was an prediction time}
+##'   \item{t}{time (as GMT POSIXct)}
+##'   \item{x}{x coordinate}
+##'   \item{y}{y coordinate}
+##'   \item{x.v}{x component of velocity}
+##'   \item{y.v}{y component of velocity}
+##'   \item{x.se}{standard error of x coordinate}
+##'   \item{y.se}{standard error of y coordinate}
+##'   \item{x.v.se}{standard error of x component of velocity}
+##'   \item{y.v.se}{standard error of x component of velocity}
+##'   \item{observed}{whether this was an observed time}
+##'   \item{predicted}{whether this was an prediction time}
 ##' @references
 ##'     Johnson, D. S., London, J. M., Lea, M. A. and Durban, J. W. (2008).
 ##'     Continuous-time correlated random walk model for animal telemetry data.
@@ -106,7 +105,8 @@ unwrapLon <- function(lon,lmin=-180)
 ##' @importFrom TMB MakeADFun sdreport summary.sdreport
 ##' @importFrom stats nlminb
 ##' @export
-crw <- function(data,predict.date=NULL,
+crw <- function(data,
+                predict.time=NULL,
                 par=c(1,1,1,1,1,1),
                 corPar=c("free","equal","fixed"),
                 errPar=c("free","equal","fixed"),
@@ -116,29 +116,26 @@ crw <- function(data,predict.date=NULL,
   corPar <- match.arg(corPar)
   errPar <- match.arg(errPar)
 
+
+
   ## Preprocess data
   data$date <- as.POSIXct(data$date,tz="GMT")
-  data$lon <- unwrapLon(data$lon)
-  if(is.null(data$fixed)) data$fixed <- FALSE
-  if(is.null(data$lon.se)) data$lon.se <- 1
-  if(is.null(data$lat.se)) data$lat.se <- 1
-
+  if(is.null(data$x.se)) data$x.se <- 1
+  if(is.null(data$y.se)) data$y.se <- 1
 
   ## Interleave times
-  tms <- .POSIXct(sort(union(data$date,predict.date)),tz="GMT")
+  tms <- .POSIXct(sort(union(data$date,predict.time)),tz="GMT")
   obs <- match(data$date,tms)
-  prd <- match(predict.date,tms)
-
+  prd <- match(predict.time,tms)
 
   ## Control parameters
   map <- list(
     logBeta=factor(switch(corPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))),
     logSigmaY=factor(switch(errPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))))
 
-
   ## TMB data
-  y <- cbind(data$lon,data$lat)
-  w <- cbind(data$lon.se,data$lat.se)
+  y <- cbind(data$x,data$y)
+  w <- cbind(data$x.se,data$y.se)
   dt <- diff(as.numeric(tms)/60)
   tmb.data <- list(y=y,w=w,dt=dt,obs=obs,tdf=tdf)
 
@@ -146,8 +143,8 @@ crw <- function(data,predict.date=NULL,
   beta <- par[1:2]
   sigma <- par[3:4]
   sigmaY <- par[5:6]
-  mu <- cbind(approx(as.numeric(data$date),data$lon,tms,rule=2)$y,
-              approx(as.numeric(data$date),data$lat,tms,rule=2)$y)
+  mu <- cbind(approx(as.numeric(data$date),data$x,tms,rule=2)$y,
+              approx(as.numeric(data$date),data$y,tms,rule=2)$y)
   nu <- matrix(0,length(tms),2)
   tmb.pars <- list(logBeta=log(beta),logSigma=log(sigma),logSigmaY=log(sigmaY),mu=mu,nu=nu)
 
@@ -164,22 +161,137 @@ crw <- function(data,predict.date=NULL,
   sdrep <- sdreport(obj)
   fxd <- summary.sdreport(sdrep,"report")
   rdm <- summary.sdreport(sdrep,"random")
-  mu <- matrix(rdm[rownames(rdm)=="mu",1],ncol=2)
-  nu <- matrix(rdm[rownames(rdm)=="nu",1],ncol=2)
-  mu.se <- matrix(rdm[rownames(rdm)=="mu",2],ncol=2)
-  nu.se <- matrix(rdm[rownames(rdm)=="nu",2],ncol=2)
+  track <- data.frame(
+    date=tms,
+    mu=matrix(rdm[rownames(rdm)=="mu",1],ncol=2),
+    nu=matrix(rdm[rownames(rdm)=="nu",1],ncol=2),
+    mu.se=matrix(rdm[rownames(rdm)=="mu",2],ncol=2),
+    nu.se=matrix(rdm[rownames(rdm)=="nu",2],ncol=2),
+    observed=seq_len(nrow(mu)) %in% obs,
+    predicted=seq_len(nrow(mu)) %in% prd)
+  colnames(track) <- c("date","x","y","x.v","y.v",
+                       "x.se","y.se","x.v.se","y.v.se",
+                       "observed",
+                       "predicted")
 
-  list(summary=fxd,
-       par=fxd[,1],
-       track=data.frame(
-         date=tms,
-         lon=mu[,1],lat=mu[,2],
-         vlon=nu[,1],vlat=nu[,2],
-         lon.se=mu.se[,1],lat.se=mu.se[,2],
-         vlon.se=nu.se[,1],vlat.se=nu.se[,2],
-         observed=seq_len(nrow(mu)) %in% obs,
-         predicted=seq_len(nrow(mu)) %in% prd),
-       opt=opt,obj=obj)
+  r <- list(summary=fxd,par=fxd[,1],track=track,data=data,opt=opt,obj=obj)
+  class(r) <- "RWalc"
+  r
+  }
+
+
+##' Extract Predicted Track
+##'
+##' This is a convenience function that filters the fitted track to
+##' return only those locations corresponding the prediction times.
+##'
+##' @title Extract Fitted Track
+##' @param object A fitted object from \code{crw}.
+##' @param all If \code{FALSE} return just the date and spatial coordinates.
+##' @param ... Ignored.
+##' @return If \code{all=TRUE} return a dataframe of predicted track
+##'   locations with columns
+##'   \item{t}{time (as GMT POSIXct)}
+##'   \item{x}{x coordinate}
+##'   \item{y}{y coordinate}
+##'   \item{x.v}{x component of velocity}
+##'   \item{y.v}{y component of velocity}
+##'   \item{x.se}{standard error of x coordinate}
+##'   \item{y.se}{standard error of y coordinate}
+##'   \item{x.v.se}{standard error of x component of velocity}
+##'   \item{y.v.se}{standard error of x component of velocity}
+##' Otherwise only the first three columns are returned
+##' @export
+predict.RWalc <- function(object,all=FALSE,...) {
+  object$track[object$track$predicted,if(all) 1:9 else 1:3]
+}
+
+
+##' Extract Fitted Track
+##'
+##' This is a convenience function that filters the fitted track to
+##' return only those locations corresponding the observed locations.
+##'
+##' @title Extract Fitted Track
+##' @param object A fitted object from \code{crw}.
+##' @param all If \code{FALSE} return just the date and spatial coordinates.
+##' @param ... Ignored.
+##' @return If \code{all=TRUE} return a dataframe of fitted track
+##'   locations with columns
+##'   \item{t}{time (as GMT POSIXct)}
+##'   \item{x}{x coordinate}
+##'   \item{y}{y coordinate}
+##'   \item{x.v}{x component of velocity}
+##'   \item{y.v}{y component of velocity}
+##'   \item{x.se}{standard error of x coordinate}
+##'   \item{y.se}{standard error of y coordinate}
+##'   \item{x.v.se}{standard error of x component of velocity}
+##'   \item{y.v.se}{standard error of x component of velocity}
+##' Otherwise only the first three columns are returned.
+##' @export
+fitted.RWalc <- function(object,all=FALSE,...) {
+  object$track[object$track$observed,if(all) 1:9 else 1:3]
+}
+
+
+
+##' Plot a Fitted RWalc Track
+##'
+##' Display the fitted track and observed locations.  Each plots
+##' displays the fitted track (blue) and an approximate 95% confidence
+##' interval (grey) together with the observed locations (red).  The
+##' first two plots display the coordinate profiles of the track over
+##' time, while the third plot shows the track.  A subset of the plots
+##' to display can be selected with the \code{which} argument.
+##'
+##' @title Plot a Fitted RWalc Track
+##' @param x A fitted object from \code{crw}..
+##' @param which Select the plots to display (see details).
+##' @param ask if \code{TRUE}, user is asked before each plot is displayed.
+##' @param ... Currently ignored
+##' @importFrom grDevices dev.interactive devAskNewPage
+##' @importFrom graphics par plot lines points polygon segments
+##' @export
+plot.RWalc <- function(x,which=1:2,
+                       ask = prod(par("mfcol")) < length(which) && dev.interactive(),
+                       ...) {
+
+  plot.profile <- function(date,y,se,lab,date0,y0) {
+    se[!is.finite(se)] <- 0
+    lwr <- y-2*se
+    upr <- y+2*se
+    plot(date,y,type="n",ylim=range(c(lwr,upr),na.rm=TRUE),xlab="date",ylab=lab)
+    polygon(c(date,rev(date)),c(lwr,rev(upr)),col="grey90",border=NA)
+    lines(date,y,col="dodgerblue")
+    points(date0,y0,col="firebrick",pch=16,cex=0.5)
+  }
+
+  plot.track <- function(x,y,x.se,y.se,x0,y0) {
+    x.se[!is.finite(x.se)] <- 0
+    x.lwr <- x-2*x.se
+    x.upr <- x+2*x.se
+    y.se[!is.finite(y.se)] <- 0
+    y.lwr <- y-2*y.se
+    y.upr <- y+2*y.se
+    plot(x,y,type="n",xlab="x",ylab="y",
+         xlim=range(c(x.lwr,x.upr),na.rm=TRUE),
+         ylim=range(c(y.lwr,y.upr),na.rm=TRUE))
+    segments(c(x.lwr,x),c(y,y.lwr),c(x.upr,x),c(y,y.upr),col="grey90",lty=1)
+    lines(x,y,col="dodgerblue")
+    points(x0,y0,pch=16,col="firebrick")
+  }
+
+  if (ask) {
+    oask <- devAskNewPage(TRUE)
+    on.exit(devAskNewPage(oask))
+  }
+  tr <- x$track
+  if(any(which==1))
+    plot.profile(tr$date,tr$x,tr$x.se,"x",x$data$date,x$data$x)
+  if(any(which==2))
+    plot.profile(tr$date,tr$y,tr$y.se,"y",x$data$date,x$data$y)
+  if(any(which==3))
+    plot.track(tr$x,tr$y,tr$x.se,tr$y.se,x$data$x,x$data$y)
 }
 
 
@@ -189,18 +301,23 @@ crw <- function(data,predict.date=NULL,
 ##' scaling location accuracy from the reported Argos location class.
 ##' These are the as used in \pkg{crawl}.
 ##'
+##' This function requires that the "x" coordinate represents
+##' longitude and the "y" coordinate represents latitude.
+##'
 ##' @title ARGOS Error Scale Factors
-##' @param lc Argos error classes.
-##' @return A dataframe with columns
-##' \item{\code{lc}}{ARGOS location class}
-##' \item{\code{lon.se}}{error scaling factor for longitude}
-##' \item{\code{lat.se}}{error scaling factor for latitude}
+##' @param data A dataframe representing the track (see details).
+##' @param class Column in data containing the Argos location classes.
+##' @return The input dataframe with the appended columns
+##' \item{\code{x.se}}{error scaling factor for longitude}
+##' \item{\code{y.se}}{error scaling factor for latitude}
 ##' @export
-argosScale <- function(lc) {
-  lc <- factor(lc,levels=c("3", "2", "1", "0", "A", "B"),ordered=TRUE)
+argosScale <- function(data,class) {
+  lc <- factor(data[,class],levels=c("3", "2", "1", "0", "A", "B"),ordered=TRUE)
   lon.se <- c(1,1.54,3.72,23.90,13.51,44.22)
   lat.se <- c(1,1.29,2.55,103.70,14.99,32.53)
-  data.frame(lon.se=lon.se[lc],lat.se=lat.se[lc])
+  data$x.se <- lon.se[lc]
+  data$y.se <- lat.se[lc]
+  data
 }
 
 
@@ -268,11 +385,11 @@ system.matrices <- function(beta,sigma,dt) {
 ##'
 ##' Additional constraints can be placed on the path by rejection
 ##' sampling through the function \code{point.check}.  This function
-##' must accept a time, longitude and latitude and return a boolean
-##' indicating whether the point is acceptable.  For example, the
-##' track can be constrained to the ocean by supplying a
-##' \code{point.check} function that compares the state to a land mask
-##' and returns \code{FALSE} for locations on land.
+##' must accept a time, x and y and return a boolean indicating
+##' whether the point is acceptable.  For example, the track can be
+##' constrained to the ocean by supplying a \code{point.check}
+##' function that compares the state to a land mask and returns
+##' \code{FALSE} for locations on land.
 ##'
 ##' Tracks are simulated in the plane.  There is is no polar
 ##' correction and without a suitable \code{point.check} function,
@@ -285,21 +402,20 @@ system.matrices <- function(beta,sigma,dt) {
 ##' @param fixed An integer vector indicating which locations in the
 ##'   template path are to be held fixed.
 ##' @param fixed.err Covariance matrix for fixed points.
-##' @param point.check A function that accepts a time, longitude and
-##'   latitude and returns boolean indicating whether the state is
-##'   acceptable.
+##' @param point.check A function that accepts a time, x and y and
+##'   returns boolean indicating whether the state is acceptable.
 ##' @return Returns a dataframe representing the simulated track with
 ##'   columns
-##'   \item{\code{date}}{time as POSIXct}
-##'   \item{\code{lon}}{longitude}
-##'   \item{\code{lat}}{latitude}
-##'   \item{\code{vlon}}{longitudinal velocity}
-##'   \item{\code{vlat}}{latitudinal velocity}
+##'   \item{t}{time (as GMT POSIXct)}
+##'   \item{x}{x coordinate}
+##'   \item{y}{y coordinate}
+##'   \item{x.v}{x component of velocity}
+##'   \item{y.v}{y component of velocity}
 ##' @importFrom stats rnorm
 ##' @export
 crwSimulate <- function(data,par,fixed=NULL,
                         fixed.err=diag(1.0E-6,4,4),
-                        point.check=function(tm,lon,lat) TRUE) {
+                        point.check=function(tm,x,y) TRUE) {
 
   beta <- par[1:2]
   sigma <- par[3:4]
@@ -321,13 +437,15 @@ crwSimulate <- function(data,par,fixed=NULL,
   }
 
   ## Times and matrix of states
-  xs <- cbind(unname(as.matrix(data[,c("lon","lat")])),0,0)
+  xs <- if(all(c("x.se","y.se") %in% colnames(data)))
+          unname(as.matrix(data[,c("x","y","x.se","y.se")]))
+        else
+          cbind(unname(as.matrix(data[,c("x","y")])),0,0)
   n <- nrow(xs)
 
   ## Prior mean and variance for each state
   ms <- xs
   Vs <- array(fixed.err,c(4,4,n))
-
 
   ## Forward pass - generate priors from movement model
   for(k in 2:n)
@@ -374,7 +492,11 @@ crwSimulate <- function(data,par,fixed=NULL,
   k <- n
   for(i in 1:50) {
     k <- if(i < 25) sample(k) else sample(n)
-    if(k==0) return(data.frame(date=ts,lon=xs[,1],lat=xs[,2],vlon=xs[,3],vlat=xs[,4]))
+    if(k==0) {
+      df <- cbind.data.frame(date=ts,xs)
+      colnames(df) <- c("date","x","y","x.se","y.se")
+      return(df)
+    }
   }
   NULL
 }
@@ -383,15 +505,15 @@ crwSimulate <- function(data,par,fixed=NULL,
 
 ##' Resample a Track by Linear Interpolation
 ##'
-##' Linearly interpolate in longitude and latitude to resample a track
-##' back to a regular time step.
+##' Linearly interpolate in the spatial coordinates to resample a
+##' track back to a regular time step.
 ##'
-##' The input track is given as a dataframe where each row is an
-##' observed location, with (at minimum) columns
+##' The input track must be given as a dataframe where each row is an
+##' observed location, with columns
 ##' \tabular{ll}{
-##' \code{date} \tab observation time (as GMT POSIXct) \cr
-##' \code{lon} \tab observed longitude \cr
-##' \code{lat} \tab observed latitude \cr
+##' t \tab observation time (as GMT POSIXct) \cr
+##' x \tab observed x coordinate \cr
+##' y \tab observed y coordinate \cr
 ##' }
 ##'
 ##' @title Interpolate Track
@@ -399,17 +521,18 @@ crwSimulate <- function(data,par,fixed=NULL,
 ##' @param tstep the time step to resample to (in seconds)
 ##' @return a dataframe with columns
 ##'   \item{\code{date}}{observation time (as POSIXct)}
-##'   \item{\code{lon}}{interpolated longitude}
-##'   \item{\code{lat}}{interpolated latitude}
+##'   \item{\code{x}}{interpolated x coordinate}
+##'   \item{\code{y}}{interpolated y coordinate}
 ##' @importFrom stats approx
 ##' @export
 interpolateTrack <- function(data,tstep=60*60) {
 
   if(!is.null(data)) {
     ts <- seq(min(data$date),max(data$date),tstep)
-    data.frame(date=ts,
-               lon=approx(as.numeric(data$date),data$lon,as.numeric(ts))$y,
-               lat=approx(as.numeric(data$date),data$lat,as.numeric(ts))$y)
+    data.frame(t=ts,
+               x=approx(as.numeric(data$date),data$x,as.numeric(ts))$y,
+               y=approx(as.numeric(data$date),data$y,as.numeric(ts))$y)
+
   }
 }
 
