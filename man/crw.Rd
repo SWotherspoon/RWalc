@@ -4,15 +4,15 @@
 \alias{crw}
 \title{Correlated Random Walk Filter}
 \usage{
-crw(data, predict.time = NULL, par = c(1, 1, 1, 1, 1, 1),
-  corPar = c("free", "equal", "fixed"), errPar = c("free", "equal",
-  "fixed"), tdf = -1, verbose = FALSE, control = list(eval.max = 2000,
-  iter.max = 1500, rel.tol = 0.001, x.tol = 0.015))
+crw(data, predict = NULL, par = c(1, 1, 1, 1, 1, 1), corPar = c("free",
+  "equal", "fixed"), errPar = c("free", "equal", "fixed"), tdf = -1,
+  verbose = FALSE, control = list(eval.max = 2000, iter.max = 1500, rel.tol
+  = 0.001, x.tol = 0.015))
 }
 \arguments{
 \item{data}{A dataframe representing the track (see details).}
 
-\item{predict.time}{Times at which to predict locations (POSIXct).}
+\item{predict}{A vector of times (as POSIXct) or a dataframe of segments and times for which to predict locations.}
 
 \item{par}{Vector of initial parameter estimates.}
 
@@ -37,7 +37,8 @@ Returns a list with components
   \item{\code{opt}}{the object returned by the optimizer}
   \item{\code{tmb}}{the \pkg{TMB} object}
 The \code{track} dataframe has columns
-  \item{t}{time (as GMT POSIXct)}
+  \item{segment}{track segment}
+  \item{date}{time (as GMT POSIXct)}
   \item{x}{x coordinate}
   \item{y}{y coordinate}
   \item{x.v}{x component of velocity}
@@ -57,17 +58,25 @@ Fit a correlated random walk to filter a track and predict
 locations for given time steps.  The movement model is as
 described in Johnson et al. (2008), but without drift or haul out
 components, but assumes t distributed errors as described by
-Albertsen et al. (2015) if `tdf` is positive.
+Albertsen et al. (2015) if \code{tdf} is positive.
 
 The input track must be given as a dataframe where each row is an
 observed location, with columns
 \tabular{ll}{
+segment \tab track segment (integer, optional) \cr
 date \tab observation time (as GMT POSIXct) \cr
 x \tab observed x coordinate \cr
 y \tab observed y coordinate \cr
 x.se \tab standard error of the x coordinate (optional) \cr
 y.se \tab standard error of the y coordinate (optional) \cr
 }
+
+The track may consist of several independent segments.  These may
+represent either non-overlapping segments of a single track, or
+distinct tracks that may overlap in time.  The fitted random walk
+is correlated within a segment, but segments are assumed
+independent. It is assumed the input dataframe is ordered by
+segment and by date within segment.
 
 The filtering model assumes the errors in the spatial coordinates
 are have standard deviations 'x.se' and 'y.se' scaled by

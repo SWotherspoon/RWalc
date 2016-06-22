@@ -23,7 +23,8 @@ returns boolean indicating whether the state is acceptable.}
 \value{
 Returns a dataframe representing the simulated track with
   columns
-  \item{t}{time (as GMT POSIXct)}
+  \item{segment}{track segment}
+  \item{date}{time (as GMT POSIXct)}
   \item{x}{x coordinate}
   \item{y}{y coordinate}
   \item{x.v}{x component of velocity}

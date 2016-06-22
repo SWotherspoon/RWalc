@@ -30,17 +30,25 @@ unwrapLon <- function(lon,lmin=-180)
 ##' locations for given time steps.  The movement model is as
 ##' described in Johnson et al. (2008), but without drift or haul out
 ##' components, but assumes t distributed errors as described by
-##' Albertsen et al. (2015) if `tdf` is positive.
+##' Albertsen et al. (2015) if \code{tdf} is positive.
 ##'
 ##' The input track must be given as a dataframe where each row is an
 ##' observed location, with columns
 ##' \tabular{ll}{
+##' segment \tab track segment (integer, optional) \cr
 ##' date \tab observation time (as GMT POSIXct) \cr
 ##' x \tab observed x coordinate \cr
 ##' y \tab observed y coordinate \cr
 ##' x.se \tab standard error of the x coordinate (optional) \cr
 ##' y.se \tab standard error of the y coordinate (optional) \cr
 ##' }
+##'
+##' The track may consist of several independent segments.  These may
+##' represent either non-overlapping segments of a single track, or
+##' distinct tracks that may overlap in time.  The fitted random walk
+##' is correlated within a segment, but segments are assumed
+##' independent. It is assumed the input dataframe is ordered by
+##' segment and by date within segment.
 ##'
 ##' The filtering model assumes the errors in the spatial coordinates
 ##' are have standard deviations 'x.se' and 'y.se' scaled by
@@ -60,7 +68,7 @@ unwrapLon <- function(lon,lmin=-180)
 ##'
 ##' @title Correlated Random Walk Filter
 ##' @param data A dataframe representing the track (see details).
-##' @param predict.time Times at which to predict locations (POSIXct).
+##' @param predict A vector of times (as POSIXct) or a dataframe of segments and times for which to predict locations.
 ##' @param par Vector of initial parameter estimates.
 ##' @param corPar Controls the autocorrelaion parameter for x and y
 ##'   processes.
@@ -77,7 +85,8 @@ unwrapLon <- function(lon,lmin=-180)
 ##'   \item{\code{opt}}{the object returned by the optimizer}
 ##'   \item{\code{tmb}}{the \pkg{TMB} object}
 ##' The \code{track} dataframe has columns
-##'   \item{t}{time (as GMT POSIXct)}
+##'   \item{segment}{track segment}
+##'   \item{date}{time (as GMT POSIXct)}
 ##'   \item{x}{x coordinate}
 ##'   \item{y}{y coordinate}
 ##'   \item{x.v}{x component of velocity}
@@ -106,7 +115,7 @@ unwrapLon <- function(lon,lmin=-180)
 ##' @importFrom stats nlminb
 ##' @export
 crw <- function(data,
-                predict.time=NULL,
+                predict=NULL,
                 par=c(1,1,1,1,1,1),
                 corPar=c("free","equal","fixed"),
                 errPar=c("free","equal","fixed"),
@@ -116,17 +125,26 @@ crw <- function(data,
   corPar <- match.arg(corPar)
   errPar <- match.arg(errPar)
 
-
-
   ## Preprocess data
   data$date <- as.POSIXct(data$date,tz="GMT")
   if(is.null(data$x.se)) data$x.se <- 1
   if(is.null(data$y.se)) data$y.se <- 1
+  if(is.null(data$segment)) data$segment <- 1
+
+  ## Convert prediction times to dataframe of dates and segments
+  if(is.null(predict)) predict <- data.frame(segment=NULL,date=NULL)
+  if(!is.data.frame(predict))
+    predict <- data.frame(
+      segment=round(approx(as.numeric(data$date),data$segment,as.numeric(predict),rule=2)$y),
+      date=predict)
 
   ## Interleave times
-  tms <- .POSIXct(sort(union(data$date,predict.time)),tz="GMT")
-  obs <- match(data$date,tms)
-  prd <- match(predict.time,tms)
+  tms <- unique(rbind(data[,c("segment","date")],predict[,c("segment","date")]))
+  tms <- tms[order(tms$segment,tms$date),]
+  tab <- paste(tms$segment,as.numeric(tms$date),sep="\r")
+  obs <- match(paste(data$segment,as.numeric(data$date),sep="\r"),tab)
+  prd <- match(paste(predict$segment,as.numeric(predict$date),sep="\r"),tab)
+
 
   ## Control parameters
   map <- list(
@@ -136,16 +154,17 @@ crw <- function(data,
   ## TMB data
   y <- cbind(data$x,data$y)
   w <- cbind(data$x.se,data$y.se)
-  dt <- diff(as.numeric(tms)/60)
-  tmb.data <- list(y=y,w=w,dt=dt,obs=obs,tdf=tdf)
+  dt <- diff(as.numeric(tms$date)/60)
+  seg <- tms$segment
+  tmb.data <- list(y=y,w=w,dt=dt,obs=obs,seg=seg,tdf=tdf)
 
   ## TMB parameters
   beta <- par[1:2]
   sigma <- par[3:4]
   sigmaY <- par[5:6]
-  mu <- cbind(approx(as.numeric(data$date),data$x,tms,rule=2)$y,
-              approx(as.numeric(data$date),data$y,tms,rule=2)$y)
-  nu <- matrix(0,length(tms),2)
+  mu <- cbind(approx(as.numeric(data$date),data$x,as.numeric(tms$date),rule=2)$y,
+              approx(as.numeric(data$date),data$y,as.numeric(tms$date),rule=2)$y)
+  nu <- matrix(0,nrow(tms),2)
   tmb.pars <- list(logBeta=log(beta),logSigma=log(sigma),logSigmaY=log(sigmaY),mu=mu,nu=nu)
 
   ## TMB - create objective function
@@ -162,14 +181,16 @@ crw <- function(data,
   fxd <- summary.sdreport(sdrep,"report")
   rdm <- summary.sdreport(sdrep,"random")
   track <- data.frame(
-    date=tms,
+    segment=tms$segment,
+    date=tms$date,
     mu=matrix(rdm[rownames(rdm)=="mu",1],ncol=2),
     nu=matrix(rdm[rownames(rdm)=="nu",1],ncol=2),
     mu.se=matrix(rdm[rownames(rdm)=="mu",2],ncol=2),
     nu.se=matrix(rdm[rownames(rdm)=="nu",2],ncol=2),
     observed=seq_len(nrow(mu)) %in% obs,
     predicted=seq_len(nrow(mu)) %in% prd)
-  colnames(track) <- c("date","x","y","x.v","y.v",
+  colnames(track) <- c("segment","date",
+                       "x","y","x.v","y.v",
                        "x.se","y.se","x.v.se","y.v.se",
                        "observed",
                        "predicted")
@@ -182,8 +203,8 @@ crw <- function(data,
 
 ##' Extract Predicted Track
 ##'
-##' This is a convenience function that filters the fitted track to
-##' return only those locations corresponding the prediction times.
+##' This is a convenience function that subsets the fitted track to
+##' return only those locations that correspond to predictions.
 ##'
 ##' @title Extract Fitted Track
 ##' @param object A fitted object from \code{crw}.
@@ -191,7 +212,8 @@ crw <- function(data,
 ##' @param ... Ignored.
 ##' @return If \code{all=TRUE} return a dataframe of predicted track
 ##'   locations with columns
-##'   \item{t}{time (as GMT POSIXct)}
+##'   \item{segment}{track segment}
+##'   \item{date}{time (as GMT POSIXct)}
 ##'   \item{x}{x coordinate}
 ##'   \item{y}{y coordinate}
 ##'   \item{x.v}{x component of velocity}
@@ -200,17 +222,18 @@ crw <- function(data,
 ##'   \item{y.se}{standard error of y coordinate}
 ##'   \item{x.v.se}{standard error of x component of velocity}
 ##'   \item{y.v.se}{standard error of x component of velocity}
-##' Otherwise only the first three columns are returned
+##' Otherwise only the first four columns are returned
 ##' @export
 predict.RWalc <- function(object,all=FALSE,...) {
-  object$track[object$track$predicted,if(all) 1:9 else 1:3]
+  object$track[object$track$predicted,if(all) 1:10 else 1:4]
 }
 
 
 ##' Extract Fitted Track
 ##'
-##' This is a convenience function that filters the fitted track to
-##' return only those locations corresponding the observed locations.
+##' This is a convenience function that subsets the fitted track to
+##' return only those locations that correspond to the original
+##' observations.
 ##'
 ##' @title Extract Fitted Track
 ##' @param object A fitted object from \code{crw}.
@@ -218,7 +241,8 @@ predict.RWalc <- function(object,all=FALSE,...) {
 ##' @param ... Ignored.
 ##' @return If \code{all=TRUE} return a dataframe of fitted track
 ##'   locations with columns
-##'   \item{t}{time (as GMT POSIXct)}
+##'   \item{segment}{track segment}
+##'   \item{date}{time (as GMT POSIXct)}
 ##'   \item{x}{x coordinate}
 ##'   \item{y}{y coordinate}
 ##'   \item{x.v}{x component of velocity}
@@ -227,10 +251,10 @@ predict.RWalc <- function(object,all=FALSE,...) {
 ##'   \item{y.se}{standard error of y coordinate}
 ##'   \item{x.v.se}{standard error of x component of velocity}
 ##'   \item{y.v.se}{standard error of x component of velocity}
-##' Otherwise only the first three columns are returned.
+##' Otherwise only the first four columns are returned.
 ##' @export
 fitted.RWalc <- function(object,all=FALSE,...) {
-  object$track[object$track$observed,if(all) 1:9 else 1:3]
+  object$track[object$track$observed,if(all) 1:10 else 1:4]
 }
 
 
@@ -247,26 +271,30 @@ fitted.RWalc <- function(object,all=FALSE,...) {
 ##' @title Plot a Fitted RWalc Track
 ##' @param x A fitted object from \code{crw}..
 ##' @param which Select the plots to display (see details).
+##' @param segment Select the segments to display (\code{NULL} displays all)
 ##' @param ask if \code{TRUE}, user is asked before each plot is displayed.
 ##' @param ... Currently ignored
 ##' @importFrom grDevices dev.interactive devAskNewPage
 ##' @importFrom graphics par plot lines points polygon segments
 ##' @export
-plot.RWalc <- function(x,which=1:2,
+plot.RWalc <- function(x,which=1:2,segment=NULL,
                        ask = prod(par("mfcol")) < length(which) && dev.interactive(),
                        ...) {
 
-  plot.profile <- function(date,y,se,lab,date0,y0) {
+  plot.profile <- function(date,seg,y,se,lab,date0,y0) {
     se[!is.finite(se)] <- 0
     lwr <- y-2*se
     upr <- y+2*se
     plot(date,y,type="n",ylim=range(c(lwr,upr),na.rm=TRUE),xlab="date",ylab=lab)
-    polygon(c(date,rev(date)),c(lwr,rev(upr)),col="grey90",border=NA)
-    lines(date,y,col="dodgerblue")
+    for(s in segment) {
+      k <-  which(seg==s)
+      polygon(c(date[k],rev(date[k])),c(lwr[k],rev(upr[k])),col="grey90",border=NA)
+      lines(date[k],y[k],col="dodgerblue")
+    }
     points(date0,y0,col="firebrick",pch=16,cex=0.5)
   }
 
-  plot.track <- function(x,y,x.se,y.se,x0,y0) {
+  plot.track <- function(seg,x,y,x.se,y.se,x0,y0) {
     x.se[!is.finite(x.se)] <- 0
     x.lwr <- x-2*x.se
     x.upr <- x+2*x.se
@@ -277,7 +305,10 @@ plot.RWalc <- function(x,which=1:2,
          xlim=range(c(x.lwr,x.upr),na.rm=TRUE),
          ylim=range(c(y.lwr,y.upr),na.rm=TRUE))
     segments(c(x.lwr,x),c(y,y.lwr),c(x.upr,x),c(y,y.upr),col="grey90",lty=1)
-    lines(x,y,col="dodgerblue")
+    for(s in segment) {
+      k <- which(seg==s)
+      lines(x[k],y[k],col="dodgerblue")
+    }
     points(x0,y0,pch=16,col="firebrick")
   }
 
@@ -285,13 +316,16 @@ plot.RWalc <- function(x,which=1:2,
     oask <- devAskNewPage(TRUE)
     on.exit(devAskNewPage(oask))
   }
-  tr <- x$track
+
+  if(is.null(segment)) segment <- unique(x$track$segment)
+  tr <- x$track[x$track$segment %in% segment,]
+  df <- x$data[x$data$segment %in% segment,]
   if(any(which==1))
-    plot.profile(tr$date,tr$x,tr$x.se,"x",x$data$date,x$data$x)
+    plot.profile(tr$date,tr$segment,tr$x,tr$x.se,"x",df$date,df$x)
   if(any(which==2))
-    plot.profile(tr$date,tr$y,tr$y.se,"y",x$data$date,x$data$y)
+    plot.profile(tr$date,tr$segment,tr$y,tr$y.se,"y",df$date,df$y)
   if(any(which==3))
-    plot.track(tr$x,tr$y,tr$x.se,tr$y.se,x$data$x,x$data$y)
+    plot.track(tr$segment,tr$x,tr$y,tr$x.se,tr$y.se,df$x,df$y)
 }
 
 
@@ -406,7 +440,8 @@ system.matrices <- function(beta,sigma,dt) {
 ##'   returns boolean indicating whether the state is acceptable.
 ##' @return Returns a dataframe representing the simulated track with
 ##'   columns
-##'   \item{t}{time (as GMT POSIXct)}
+##'   \item{segment}{track segment}
+##'   \item{date}{time (as GMT POSIXct)}
 ##'   \item{x}{x coordinate}
 ##'   \item{y}{y coordinate}
 ##'   \item{x.v}{x component of velocity}
@@ -420,9 +455,13 @@ crwSimulate <- function(data,par,fixed=NULL,
   beta <- par[1:2]
   sigma <- par[3:4]
 
-  ## First state must be fixed
+
+  ## First state in each segment must be fixed, and the simulation is
+  ## reset at the end of each segment
+  seg <- if(!is.null(data$segment)) data$segment else rep(1,nrow(data))
   fixed <- if(!is.null(fixed)) fixed else rep(FALSE,nrow(data))
-  fixed[1] <- TRUE
+  fixed[match(unique(seg),seg)] <- TRUE
+  reset <- c(diff(seg)!=0,TRUE)
 
   ## Calculate system matrices
   ts <- as.POSIXct(data$date,tz="GMT")
@@ -457,19 +496,24 @@ crwSimulate <- function(data,par,fixed=NULL,
   ## Reverse pass - recursively sample with a Kalman/Regression step
   ## starting from x[k0,]
   sample <- function(k0) {
-    x <- ms[k0,] + drop(rnorm(4)%*%chol(Vs[,,k0]))
-    xs[k0,] <<- x
-    for(k in (k0-1):1) {
-      ## Kalman gain
-      ## K <- Vs[,,k]%*%t(As[[k]])%*%solve(As[[k]]%*%Vs[,,k]%*%t(As[[k]])+Qs[[k]])
-      W <- As[[k]]%*%Vs[,,k]
-      K <- crossprod(W,solve(tcrossprod(W,As[[k]])+Qs[[k]]))
-      ## Mean, variance update
-      mu <- ms[k,] + drop(K%*%(x-As[[k]]%*%ms[k,]))
-      ## V <- Vs[,,k] - K%*%As[[k]]%*%Vs[,,k]
-      W <- (diag(1,4,4)-K%*%As[[k]])
-      V <- tcrossprod(W%*%Vs[,,k],W)+tcrossprod(K%*%Qs[[k]],K)
-      R <- chol(V)
+    for(k in k0:1) {
+      if(reset[k]) {
+        k0 <- k
+        mu <- ms[k0,]
+        R <- chol(Vs[,,k0])
+        x <- ms[k0,] + drop(rnorm(4)%*%chol(Vs[,,k0]))
+      } else {
+        ## Kalman gain
+        ## K <- Vs[,,k]%*%t(As[[k]])%*%solve(As[[k]]%*%Vs[,,k]%*%t(As[[k]])+Qs[[k]])
+        W <- As[[k]]%*%Vs[,,k]
+        K <- crossprod(W,solve(tcrossprod(W,As[[k]])+Qs[[k]]))
+        ## Mean, variance update
+        mu <- ms[k,] + drop(K%*%(x-As[[k]]%*%ms[k,]))
+        ## V <- Vs[,,k] - K%*%As[[k]]%*%Vs[,,k]
+        W <- (diag(1,4,4)-K%*%As[[k]])
+        V <- tcrossprod(W%*%Vs[,,k],W)+tcrossprod(K%*%Qs[[k]],K)
+        R <- chol(V)
+      }
       ## point.check/rejection loop
       for(r in 1:100) {
         x <- mu + drop(rnorm(length(mu))%*%R)
@@ -493,8 +537,8 @@ crwSimulate <- function(data,par,fixed=NULL,
   for(i in 1:50) {
     k <- if(i < 25) sample(k) else sample(n)
     if(k==0) {
-      df <- cbind.data.frame(date=ts,xs)
-      colnames(df) <- c("date","x","y","x.se","y.se")
+      df <- cbind.data.frame(segment=seg,date=ts,xs)
+      colnames(df) <- c("segment","date","x","y","x.se","y.se")
       return(df)
     }
   }
@@ -511,7 +555,8 @@ crwSimulate <- function(data,par,fixed=NULL,
 ##' The input track must be given as a dataframe where each row is an
 ##' observed location, with columns
 ##' \tabular{ll}{
-##' t \tab observation time (as GMT POSIXct) \cr
+##' segment \tab track segment \cr
+##' date \tab observation time (as GMT POSIXct) \cr
 ##' x \tab observed x coordinate \cr
 ##' y \tab observed y coordinate \cr
 ##' }
@@ -527,13 +572,19 @@ crwSimulate <- function(data,par,fixed=NULL,
 ##' @export
 interpolateTrack <- function(data,tstep=60*60) {
 
-  if(!is.null(data)) {
-    ts <- seq(min(data$date),max(data$date),tstep)
-    data.frame(t=ts,
-               x=approx(as.numeric(data$date),data$x,as.numeric(ts))$y,
-               y=approx(as.numeric(data$date),data$y,as.numeric(ts))$y)
-
+  interp <- function(s) {
+    d <- data[data$segment==s,]
+    ts <- seq(min(d$date),max(d$date),tstep)
+    data.frame(segment=s,
+               date=ts,
+               x=approx(as.numeric(d$date),d$x,as.numeric(ts))$y,
+               y=approx(as.numeric(d$date),d$y,as.numeric(ts))$y)
   }
+
+  if(!is.null(data))
+    do.call(rbind,
+            c(lapply(sort(unique(data$segment)),interp),
+              make.row.names=FALSE))
 }
 
 
