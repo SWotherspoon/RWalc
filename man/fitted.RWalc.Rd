@@ -16,7 +16,8 @@
 \value{
 If \code{all=TRUE} return a dataframe of fitted track
   locations with columns
-  \item{t}{time (as GMT POSIXct)}
+  \item{segment}{track segment}
+  \item{date}{time (as GMT POSIXct)}
   \item{x}{x coordinate}
   \item{y}{y coordinate}
   \item{x.v}{x component of velocity}
@@ -25,13 +26,14 @@ If \code{all=TRUE} return a dataframe of fitted track
   \item{y.se}{standard error of y coordinate}
   \item{x.v.se}{standard error of x component of velocity}
   \item{y.v.se}{standard error of x component of velocity}
-Otherwise only the first three columns are returned.
+Otherwise only the first four columns are returned.
 }
 \description{
 Extract Fitted Track
 }
 \details{
-This is a convenience function that filters the fitted track to
-return only those locations corresponding the observed locations.
+This is a convenience function that subsets the fitted track to
+return only those locations that correspond to the original
+observations.
 }
 

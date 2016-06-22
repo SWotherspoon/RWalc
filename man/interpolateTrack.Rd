@@ -27,7 +27,8 @@ track back to a regular time step.
 The input track must be given as a dataframe where each row is an
 observed location, with columns
 \tabular{ll}{
-t \tab observation time (as GMT POSIXct) \cr
+segment \tab track segment \cr
+date \tab observation time (as GMT POSIXct) \cr
 x \tab observed x coordinate \cr
 y \tab observed y coordinate \cr
 }

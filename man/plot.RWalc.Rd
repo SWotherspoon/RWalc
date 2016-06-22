@@ -4,13 +4,15 @@
 \alias{plot.RWalc}
 \title{Plot a Fitted RWalc Track}
 \usage{
-\method{plot}{RWalc}(x, which = 1:2, ask = prod(par("mfcol")) <
-  length(which) && dev.interactive(), ...)
+\method{plot}{RWalc}(x, which = 1:2, segment = NULL,
+  ask = prod(par("mfcol")) < length(which) && dev.interactive(), ...)
 }
 \arguments{
 \item{x}{A fitted object from \code{crw}..}
 
 \item{which}{Select the plots to display (see details).}
+
+\item{segment}{Select the segments to display (\code{NULL} displays all)}
 
 \item{ask}{if \code{TRUE}, user is asked before each plot is displayed.}
 
