@@ -538,7 +538,7 @@ crwSimulate <- function(data,par,fixed=NULL,
     k <- if(i < 25) sample(k) else sample(n)
     if(k==0) {
       df <- cbind.data.frame(segment=seg,date=ts,xs)
-      colnames(df) <- c("segment","date","x","y","x.se","y.se")
+      colnames(df) <- c("segment","date","x","y","x.v","y.v")
       return(df)
     }
   }
