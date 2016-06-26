@@ -132,7 +132,7 @@ crw <- function(data,
   if(is.null(data$segment)) data$segment <- 1
 
   ## Convert prediction times to dataframe of dates and segments
-  if(is.null(predict)) predict <- data.frame(segment=NULL,date=NULL)
+  if(is.null(predict)) predict <- data.frame(segment=numeric(0),date=numeric(0))
   if(!is.data.frame(predict))
     predict <- data.frame(
       segment=round(approx(as.numeric(data$date),data$segment,as.numeric(predict),rule=2)$y),
