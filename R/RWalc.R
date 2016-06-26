@@ -132,7 +132,7 @@ crw <- function(data,
   if(is.null(data$segment)) data$segment <- 1
 
   ## Convert prediction times to dataframe of dates and segments
-  if(is.null(predict)) predict <- data.frame(segment=NULL,date=NULL)
+  if(is.null(predict)) predict <- data.frame(segment=numeric(0),date=numeric(0))
   if(!is.data.frame(predict))
     predict <- data.frame(
       segment=round(approx(as.numeric(data$date),data$segment,as.numeric(predict),rule=2)$y),
@@ -374,6 +374,7 @@ argosScale <- function(data,class) {
 system.matrices <- function(beta,sigma,dt) {
   A <- matrix(0,4,4)
   Q <- matrix(0,4,4)
+  s <- sigma^2/beta
 
   A[1,1] <- 1
   A[1,3] <- (1-exp(-beta[1]*dt))/beta[1]
@@ -382,14 +383,14 @@ system.matrices <- function(beta,sigma,dt) {
   A[3,3] <- exp(-beta[1]*dt)
   A[4,4] <- exp(-beta[2]*dt)
 
-  Q[1,1] <- sigma[1]^2/beta[1]^2*(dt-2*(1-exp(-beta[1]*dt))/beta[1]+(1-exp(-2*beta[1]*dt))/(2*beta[1]))
-  Q[2,2] <- sigma[2]^2/beta[2]^2*(dt-2*(1-exp(-beta[2]*dt))/beta[2]+(1-exp(-2*beta[2]*dt))/(2*beta[2]))
-  Q[3,3] <- sigma[1]^2/beta[2]^2*beta[2]*(1-exp(-2*beta[1]*dt))/2
-  Q[4,4] <- sigma[2]^2/beta[2]^2*beta[2]*(1-exp(-2*beta[2]*dt))/2
-  Q[1,3] <- sigma[1]^2/beta[1]^2*(1-2*exp(-beta[1]*dt)+exp(-2*beta[1]*dt))/2
-  Q[3,1] <- sigma[1]^2/beta[1]^2*(1-2*exp(-beta[1]*dt)+exp(-2*beta[1]*dt))/2
-  Q[2,4] <- sigma[2]^2/beta[2]^2*(1-2*exp(-beta[2]*dt)+exp(-2*beta[2]*dt))/2
-  Q[4,2] <- sigma[2]^2/beta[2]^2*(1-2*exp(-beta[2]*dt)+exp(-2*beta[2]*dt))/2
+  Q[1,1] <- s[1]/beta[1]*(dt-2*(1-exp(-beta[1]*dt))/beta[1]+(1-exp(-2*beta[1]*dt))/(2*beta[1]))
+  Q[2,2] <- s[2]/beta[2]*(dt-2*(1-exp(-beta[2]*dt))/beta[2]+(1-exp(-2*beta[2]*dt))/(2*beta[2]))
+  Q[3,3] <- s[1]*(1-exp(-2*beta[1]*dt))/2
+  Q[4,4] <- s[2]*(1-exp(-2*beta[2]*dt))/2
+  Q[1,3] <- s[1]/beta[1]*(1-2*exp(-beta[1]*dt)+exp(-2*beta[1]*dt))/2
+  Q[3,1] <- Q[1,3]
+  Q[2,4] <- s[2]/beta[2]*(1-2*exp(-beta[2]*dt)+exp(-2*beta[2]*dt))/2
+  Q[4,2] <- Q[2,4]
 
   list(A=A,Q=Q)
 }
@@ -538,7 +539,7 @@ crwSimulate <- function(data,par,fixed=NULL,
     k <- if(i < 25) sample(k) else sample(n)
     if(k==0) {
       df <- cbind.data.frame(segment=seg,date=ts,xs)
-      colnames(df) <- c("segment","date","x","y","x.se","y.se")
+      colnames(df) <- c("segment","date","x","y","x.v","y.v")
       return(df)
     }
   }

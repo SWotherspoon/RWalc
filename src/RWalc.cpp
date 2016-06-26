@@ -106,20 +106,20 @@ Type objective_function<Type>::operator() ()
 
   for(int i=0; i<dt.size(); ++i) {
     if(seg(i+1)==seg(i)) {
-      eta(0) = mu(i+1,0)-(mu(i,0)+nu(i,0)*(1.0-exp(-beta(0)*dt(i)))/beta(0));
-      eta(1) = nu(i+1,0) - exp(-beta(0)*dt(i))*nu(i,0);
+      eta(0) = mu(i+1,0)-(mu(i,0)+(1.0-exp(-beta(0)*dt(i)))/beta(0)*nu(i,0));
+      eta(1) = nu(i+1,0)-exp(-beta(0)*dt(i))*nu(i,0);
 
-      eta(2) = mu(i+1,1)-(mu(i,1)+nu(i,1)*(1.0-exp(-beta(1)*dt(i)))/beta(1));
-      eta(3) = nu(i+1,1) - exp(-beta(1)*dt(i))*nu(i,1);
+      eta(2) = mu(i+1,1)-(mu(i,1)+(1.0-exp(-beta(1)*dt(i)))/beta(1)*nu(i,1));
+      eta(3) = nu(i+1,1)-exp(-beta(1)*dt(i))*nu(i,1);
 
       Q(0,0) = sigma2(0)/pow(beta(0),2.0)*(dt(i)-2.0*(1.0-exp(-beta(0)*dt(i)))/beta(0)+(1.0-exp(-2.0*beta(0)*dt(i)))/(2.0*beta(0)));
-      Q(1,1) = sigma2(0)*(1.0-exp(-2.0*beta(0)*dt(i)))/(2*beta(0));
-      Q(1,0) = sigma2(0)*(1.0-2.0*exp(-beta(0)*dt(i))+exp(-2.0*beta(0)*dt(i)))/(2.0*pow(beta(0),2.0));
+      Q(1,1) = sigma2(0)/beta(0)*(1.0-exp(-2.0*beta(0)*dt(i)))/2.0 ;
+      Q(1,0) = sigma2(0)/pow(beta(0),2.0)*(1.0-2.0*exp(-beta(0)*dt(i))+exp(-2.0*beta(0)*dt(i)))/2.0;
       Q(0,1) = Q(1,0);
 
       Q(2,2) = sigma2(1)/pow(beta(1),2.0)*(dt(i)-2.0*(1.0-exp(-beta(1)*dt(i)))/beta(1)+(1.0-exp(-2.0*beta(1)*dt(i)))/(2.0*beta(1)));
-      Q(3,3) = sigma2(1)*(1.0-exp(-2.0*beta(1)*dt(i)))/(2.0*beta(1));
-      Q(2,3) = sigma2(1)*(1.0-2.0*exp(-beta(1)*dt(i))+exp(-2.0*beta(1)*dt(i)))/(2.0*pow(beta(1),2.0));
+      Q(3,3) = sigma2(1)/beta(1)*(1.0-exp(-2.0*beta(1)*dt(i)))/2.0;
+      Q(2,3) = sigma2(1)/pow(beta(1),2.0)*(1.0-2.0*exp(-beta(1)*dt(i))+exp(-2.0*beta(1)*dt(i)))/2.0;
       Q(3,2) = Q(2,3);
 
       nll += MVNORM<Type>(Q)(eta);
