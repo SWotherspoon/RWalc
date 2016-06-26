@@ -384,7 +384,6 @@ system.matrices <- function(beta,sigma,dt) {
 
   Q[1,1] <- sigma[1]^2/beta[1]^2*(dt-2*(1-exp(-beta[1]*dt))/beta[1]+(1-exp(-2*beta[1]*dt))/(2*beta[1]))
   Q[2,2] <- sigma[2]^2/beta[2]^2*(dt-2*(1-exp(-beta[2]*dt))/beta[2]+(1-exp(-2*beta[2]*dt))/(2*beta[2]))
-  Q[3,3] <- sigma[1]^2/beta[2]^2*beta[2]*(1-exp(-2*beta[1]*dt))/2
   Q[4,4] <- sigma[2]^2/beta[2]^2*beta[2]*(1-exp(-2*beta[2]*dt))/2
   Q[1,3] <- sigma[1]^2/beta[1]^2*(1-2*exp(-beta[1]*dt)+exp(-2*beta[1]*dt))/2
   Q[3,1] <- sigma[1]^2/beta[1]^2*(1-2*exp(-beta[1]*dt)+exp(-2*beta[1]*dt))/2
