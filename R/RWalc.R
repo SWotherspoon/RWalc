@@ -429,7 +429,7 @@ system.matrices <- function(beta,sigma,dt) {
 ##'
 ##' Additional constraints can be placed on the path by rejection
 ##' sampling through the function \code{point.check}.  This function
-##' must accept a time, x and y and return a boolean indicating
+##' must accept a time, x and y and return a logical indicating
 ##' whether the point is acceptable.  For example, the track can be
 ##' constrained to the ocean by supplying a \code{point.check}
 ##' function that compares the state to a land mask and returns
@@ -446,8 +446,12 @@ system.matrices <- function(beta,sigma,dt) {
 ##' @param fixed An integer vector indicating which locations in the
 ##'   template path are to be held fixed.
 ##' @param fixed.err Covariance matrix for fixed points.
-##' @param point.check A function that accepts a time, x and y and
-##'   returns boolean indicating whether the state is acceptable.
+##' @param point.accept A logical vector indicating which locations
+##'   should not be chacked with the \code{point.check} function.
+##' @param point.check A function that accepts a time, and an x,y
+##'   location and returns a logical indicating whether the location is
+##'   acceptable.
+##'
 ##' @return Returns a dataframe representing the simulated track with
 ##'   columns
 ##'   \item{segment}{track segment}
@@ -460,6 +464,7 @@ system.matrices <- function(beta,sigma,dt) {
 ##' @export
 crwSimulate <- function(data,par,fixed=NULL,
                         fixed.err=diag(1.0E-6,4,4),
+                        point.accept=fixed,
                         point.check=function(tm,x,y) TRUE) {
 
   beta <- par[1:2]
@@ -527,7 +532,7 @@ crwSimulate <- function(data,par,fixed=NULL,
       ## point.check/rejection loop
       for(r in 1:100) {
         x <- mu + drop(rnorm(length(mu))%*%R)
-        if(fixed[k] || point.check(ts[k],x[1],x[2])) break
+        if(point.accept[k] || point.check(ts[k],x[1],x[2])) break
         ## If fail, return last fixed point
         if(r==100) return(k0)
       }

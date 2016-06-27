@@ -5,7 +5,7 @@
 \title{Regressive bridge sampler}
 \usage{
 crwSimulate(data, par, fixed = NULL, fixed.err = diag(1e-06, 4, 4),
-  point.check = function(tm, x, y) TRUE)
+  point.accept = fixed, point.check = function(tm, x, y) TRUE)
 }
 \arguments{
 \item{data}{A dataframe representing the template track.}
@@ -17,8 +17,12 @@ template path are to be held fixed.}
 
 \item{fixed.err}{Covariance matrix for fixed points.}
 
-\item{point.check}{A function that accepts a time, x and y and
-returns boolean indicating whether the state is acceptable.}
+\item{point.accept}{A logical vector indicating which locations
+should not be chacked with the \code{point.check} function.}
+
+\item{point.check}{A function that accepts a time, and an x,y
+location and returns a logical indicating whether the location is
+acceptable.}
 }
 \value{
 Returns a dataframe representing the simulated track with
@@ -56,7 +60,7 @@ acccurately the simulated track reproduces the four components
 
 Additional constraints can be placed on the path by rejection
 sampling through the function \code{point.check}.  This function
-must accept a time, x and y and return a boolean indicating
+must accept a time, x and y and return a logical indicating
 whether the point is acceptable.  For example, the track can be
 constrained to the ocean by supplying a \code{point.check}
 function that compares the state to a land mask and returns
