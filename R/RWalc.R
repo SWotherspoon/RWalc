@@ -51,13 +51,16 @@ unwrapLon <- function(lon,lmin=-180)
 ##' segment and by date within segment.
 ##'
 ##' The filtering model assumes the errors in the spatial coordinates
-##' are have standard deviations 'x.se' and 'y.se' scaled by
-##' the \eqn{\sigma_{y}}{sigmaY} model parameters. If these columns
-##' are missing, they are assumed to be 1.
+##' are have standard deviations 'x.se' and 'y.se' scaled by the
+##' \eqn{\tau}{tau} model parameters. If these columns are missing,
+##' they are assumed to be 1.
 ##'
-##' The \code{corPar} and \code{errPar} arguments control how the
-##' correlation parameters \eqn{\beta}{beta} and the error scaling
-##' parameters \eqn{\sigma_{y}}{sigmaY} apply to the x and y processes:
+##' The \code{corPar}, \code{velPar}, \code{errPar} arguments control
+##' how the correlation parameters \eqn{\beta}{beta}, the standard
+##' deviations of the innovations for the velocity process
+##' \eqn{\sigma}{sigma} and the error scaling parameters
+##' \eqn{\tau}{tau} apply to the x and y processes:
+##'
 ##' \tabular{ll}{
 ##' \code{"free"} \tab independent parameters are estimated for
 ##'     x and y \cr
@@ -68,10 +71,13 @@ unwrapLon <- function(lon,lmin=-180)
 ##'
 ##' @title Correlated Random Walk Filter
 ##' @param data A dataframe representing the track (see details).
-##' @param predict A vector of times (as POSIXct) or a dataframe of segments and times for which to predict locations.
+##' @param predict A vector of times (as POSIXct) or a dataframe of
+##'   segments and times for which to predict locations.
 ##' @param par Vector of initial parameter estimates.
 ##' @param corPar Controls the autocorrelaion parameter for x and y
 ##'   processes.
+##' @param velPar Controls the standard deviation parameters for the
+##'   stochastic innovations of the velocity for the x and y processes.
 ##' @param errPar Controls the scaling parameter for the observational
 ##'   errors for the x and y processes
 ##' @param tdf Degrees of freedom for the multivariate t error
@@ -94,7 +100,7 @@ unwrapLon <- function(lon,lmin=-180)
 ##'   \item{x.se}{standard error of x coordinate}
 ##'   \item{y.se}{standard error of y coordinate}
 ##'   \item{x.v.se}{standard error of x component of velocity}
-##'   \item{y.v.se}{standard error of x component of velocity}
+##'   \item{y.v.se}{standard error of y component of velocity}
 ##'   \item{observed}{whether this was an observed time}
 ##'   \item{predicted}{whether this was an prediction time}
 ##' @references
@@ -118,11 +124,13 @@ crw <- function(data,
                 predict=NULL,
                 par=c(1,1,1,1,1,1),
                 corPar=c("free","equal","fixed"),
+                velPar=c("free","equal","fixed"),
                 errPar=c("free","equal","fixed"),
                 tdf=-1,verbose=FALSE,
                 control = list(eval.max=2000,iter.max=1500,rel.tol=1.0e-3,x.tol=1.5e-2)) {
 
   corPar <- match.arg(corPar)
+  velPar <- match.arg(velPar)
   errPar <- match.arg(errPar)
 
   ## Preprocess data
@@ -149,7 +157,8 @@ crw <- function(data,
   ## Control parameters
   map <- list(
     logBeta=factor(switch(corPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))),
-    logSigmaY=factor(switch(errPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))))
+    logSigma=factor(switch(velPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))),
+    logTau=factor(switch(errPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))))
 
   ## TMB data
   y <- cbind(data$x,data$y)
@@ -161,11 +170,11 @@ crw <- function(data,
   ## TMB parameters
   beta <- par[1:2]
   sigma <- par[3:4]
-  sigmaY <- par[5:6]
+  tau <- par[5:6]
   mu <- cbind(approx(as.numeric(data$date),data$x,as.numeric(tms$date),rule=2)$y,
               approx(as.numeric(data$date),data$y,as.numeric(tms$date),rule=2)$y)
   nu <- matrix(0,nrow(tms),2)
-  tmb.pars <- list(logBeta=log(beta),logSigma=log(sigma),logSigmaY=log(sigmaY),mu=mu,nu=nu)
+  tmb.pars <- list(logBeta=log(beta),logSigma=log(sigma),logTau=log(tau),mu=mu,nu=nu)
 
   ## TMB - create objective function
   obj <- MakeADFun(tmb.data,tmb.pars,map,random=c("mu","nu"),DLL="RWalc",silent=!verbose)
