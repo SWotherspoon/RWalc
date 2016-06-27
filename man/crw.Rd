@@ -5,19 +5,24 @@
 \title{Correlated Random Walk Filter}
 \usage{
 crw(data, predict = NULL, par = c(1, 1, 1, 1, 1, 1), corPar = c("free",
-  "equal", "fixed"), errPar = c("free", "equal", "fixed"), tdf = -1,
-  verbose = FALSE, control = list(eval.max = 2000, iter.max = 1500, rel.tol
-  = 0.001, x.tol = 0.015))
+  "equal", "fixed"), velPar = c("free", "equal", "fixed"),
+  errPar = c("free", "equal", "fixed"), tdf = -1, verbose = FALSE,
+  control = list(eval.max = 2000, iter.max = 1500, rel.tol = 0.001, x.tol =
+  0.015))
 }
 \arguments{
 \item{data}{A dataframe representing the track (see details).}
 
-\item{predict}{A vector of times (as POSIXct) or a dataframe of segments and times for which to predict locations.}
+\item{predict}{A vector of times (as POSIXct) or a dataframe of
+segments and times for which to predict locations.}
 
 \item{par}{Vector of initial parameter estimates.}
 
 \item{corPar}{Controls the autocorrelaion parameter for x and y
 processes.}
+
+\item{velPar}{Controls the standard deviation parameters for the
+stochastic innovations of the velocity for the x and y processes.}
 
 \item{errPar}{Controls the scaling parameter for the observational
 errors for the x and y processes}
@@ -46,7 +51,7 @@ The \code{track} dataframe has columns
   \item{x.se}{standard error of x coordinate}
   \item{y.se}{standard error of y coordinate}
   \item{x.v.se}{standard error of x component of velocity}
-  \item{y.v.se}{standard error of x component of velocity}
+  \item{y.v.se}{standard error of y component of velocity}
   \item{observed}{whether this was an observed time}
   \item{predicted}{whether this was an prediction time}
 }
@@ -79,13 +84,16 @@ independent. It is assumed the input dataframe is ordered by
 segment and by date within segment.
 
 The filtering model assumes the errors in the spatial coordinates
-are have standard deviations 'x.se' and 'y.se' scaled by
-the \eqn{\sigma_{y}}{sigmaY} model parameters. If these columns
-are missing, they are assumed to be 1.
+are have standard deviations 'x.se' and 'y.se' scaled by the
+\eqn{\tau}{tau} model parameters. If these columns are missing,
+they are assumed to be 1.
 
-The \code{corPar} and \code{errPar} arguments control how the
-correlation parameters \eqn{\beta}{beta} and the error scaling
-parameters \eqn{\sigma_{y}}{sigmaY} apply to the x and y processes:
+The \code{corPar}, \code{velPar}, \code{errPar} arguments control
+how the correlation parameters \eqn{\beta}{beta}, the standard
+deviations of the innovations for the velocity process
+\eqn{\sigma}{sigma} and the error scaling parameters
+\eqn{\tau}{tau} apply to the x and y processes:
+
 \tabular{ll}{
 \code{"free"} \tab independent parameters are estimated for
     x and y \cr

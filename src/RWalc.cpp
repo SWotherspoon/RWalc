@@ -77,7 +77,7 @@ Type objective_function<Type>::operator() ()
 
   PARAMETER_VECTOR(logBeta);
   PARAMETER_VECTOR(logSigma);
-  PARAMETER_VECTOR(logSigmaY);
+  PARAMETER_VECTOR(logTau);
   PARAMETER_MATRIX(mu);
   PARAMETER_MATRIX(nu);
 
@@ -87,13 +87,13 @@ Type objective_function<Type>::operator() ()
 
   // Backtransform parameters
   vector<Type> sigma = exp(logSigma);
-  vector<Type> sigmaY = exp(logSigmaY);
+  vector<Type> tau = exp(logTau);
 
   // Response distribution
   matrix<Type> H(2,2);
   H.setZero();
-  H(0,0) = exp(2.0*logSigmaY(0));
-  H(1,1) = exp(2.0*logSigmaY(1));
+  H(0,0) = exp(2.0*logTau(0));
+  H(1,1) = exp(2.0*logTau(1));
 
   MVT_t<Type> nll_dist = MVT_t<Type>(H,Type(tdf),tdf <= 0);
   //MVNORM_t<Type> nll_dist = MVNORM<Type>(H);
@@ -136,7 +136,7 @@ Type objective_function<Type>::operator() ()
 
   ADREPORT(beta)
   ADREPORT(sigma)
-  ADREPORT(sigmaY)
+  ADREPORT(tau)
   return nll;
 }
 
