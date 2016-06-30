@@ -5,7 +5,7 @@
 \title{Regressive bridge sampler}
 \usage{
 crwSimulate(data, par, fixed = NULL, fixed.err = diag(1e-06, 4, 4),
-  point.accept = fixed, point.check = function(tm, x, y) TRUE)
+  point.check = function(tm, x, y) TRUE, point.accept = NULL)
 }
 \arguments{
 \item{data}{A dataframe representing the template track.}
@@ -17,12 +17,13 @@ template path are to be held fixed.}
 
 \item{fixed.err}{Covariance matrix for fixed points.}
 
-\item{point.accept}{A logical vector indicating which locations
-should not be chacked with the \code{point.check} function.}
-
 \item{point.check}{A function that accepts a time, and an x,y
-location and returns a logical indicating whether the location is
-acceptable.}
+location and returns a logical indicating whether the location
+is acceptable.}
+
+\item{point.accept}{A logical vector indicating which locations
+should not be checked with the \code{point.check} function.
+Defaults to the value of \code{fixed}.}
 }
 \value{
 Returns a dataframe representing the simulated track with
@@ -52,11 +53,12 @@ vector with an entry for each location, with entries indicating
    \item{2} the location is fixed and the point may be a cusp
             (autocorrelation is reset).
 }
-In the current implementation the first location must always be
-fixed.  The \code{fixed.err} parameter specifies the covariance of
-the error in the fixed points, allowing the user to control how
-acccurately the simulated track reproduces the four components
-(locations and velocities) of the fixed points.
+
+In the current implementation the first location in each segment
+must be fixed.  The \code{fixed.err} parameter specifies the
+covariance of the error in the fixed points, allowing the user to
+control how acccurately the simulated track reproduces the four
+components (locations and velocities) of the fixed points.
 
 Additional constraints can be placed on the path by rejection
 sampling through the function \code{point.check}.  This function
@@ -65,6 +67,11 @@ whether the point is acceptable.  For example, the track can be
 constrained to the ocean by supplying a \code{point.check}
 function that compares the state to a land mask and returns
 \code{FALSE} for locations on land.
+
+The \code{point.accept} can be used to mark points that should not
+be checked in the rejection step.  Currently this defaults to the
+value of \code{fixed} - so that by default fixed points are never
+checked.
 
 Tracks are simulated in the plane.  There is is no polar
 correction and without a suitable \code{point.check} function,

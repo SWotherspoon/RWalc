@@ -171,6 +171,7 @@ crw <- function(data,
   beta <- par[1:2]
   sigma <- par[3:4]
   tau <- par[5:6]
+
   mu <- cbind(approx(as.numeric(data$date),data$x,as.numeric(tms$date),rule=2)$y,
               approx(as.numeric(data$date),data$y,as.numeric(tms$date),rule=2)$y)
   nu <- matrix(0,nrow(tms),2)
@@ -421,11 +422,12 @@ system.matrices <- function(beta,sigma,dt) {
 ##'    \item{2} the location is fixed and the point may be a cusp
 ##'             (autocorrelation is reset).
 ##' }
-##' In the current implementation the first location must always be
-##' fixed.  The \code{fixed.err} parameter specifies the covariance of
-##' the error in the fixed points, allowing the user to control how
-##' acccurately the simulated track reproduces the four components
-##' (locations and velocities) of the fixed points.
+##'
+##' In the current implementation the first location in each segment
+##' must be fixed.  The \code{fixed.err} parameter specifies the
+##' covariance of the error in the fixed points, allowing the user to
+##' control how acccurately the simulated track reproduces the four
+##' components (locations and velocities) of the fixed points.
 ##'
 ##' Additional constraints can be placed on the path by rejection
 ##' sampling through the function \code{point.check}.  This function
@@ -434,6 +436,11 @@ system.matrices <- function(beta,sigma,dt) {
 ##' constrained to the ocean by supplying a \code{point.check}
 ##' function that compares the state to a land mask and returns
 ##' \code{FALSE} for locations on land.
+##'
+##' The \code{point.accept} can be used to mark points that should not
+##' be checked in the rejection step.  Currently this defaults to the
+##' value of \code{fixed} - so that by default fixed points are never
+##' checked.
 ##'
 ##' Tracks are simulated in the plane.  There is is no polar
 ##' correction and without a suitable \code{point.check} function,
@@ -446,11 +453,12 @@ system.matrices <- function(beta,sigma,dt) {
 ##' @param fixed An integer vector indicating which locations in the
 ##'   template path are to be held fixed.
 ##' @param fixed.err Covariance matrix for fixed points.
-##' @param point.accept A logical vector indicating which locations
-##'   should not be chacked with the \code{point.check} function.
 ##' @param point.check A function that accepts a time, and an x,y
-##'   location and returns a logical indicating whether the location is
-##'   acceptable.
+##'   location and returns a logical indicating whether the location
+##'   is acceptable.
+##' @param point.accept A logical vector indicating which locations
+##'   should not be checked with the \code{point.check} function.
+##'   Defaults to the value of \code{fixed}.
 ##'
 ##' @return Returns a dataframe representing the simulated track with
 ##'   columns
@@ -464,8 +472,8 @@ system.matrices <- function(beta,sigma,dt) {
 ##' @export
 crwSimulate <- function(data,par,fixed=NULL,
                         fixed.err=diag(1.0E-6,4,4),
-                        point.accept=fixed,
-                        point.check=function(tm,x,y) TRUE) {
+                        point.check=function(tm,x,y) TRUE,
+                        point.accept=NULL) {
 
   beta <- par[1:2]
   sigma <- par[3:4]
@@ -473,10 +481,12 @@ crwSimulate <- function(data,par,fixed=NULL,
 
   ## First state in each segment must be fixed, and the simulation is
   ## reset at the end of each segment
-  seg <- if(!is.null(data$segment)) data$segment else rep(1,nrow(data))
-  fixed <- if(!is.null(fixed)) fixed else rep(FALSE,nrow(data))
+  seg <- rep_len(if(is.null(data$segment)) 1 else data$segment,nrow(data))
+  fixed <- rep_len(if(is.null(fixed)) FALSE else fixed,nrow(data))
   fixed[match(unique(seg),seg)] <- TRUE
   reset <- c(diff(seg)!=0,TRUE)
+  ## By default, fixed points are not checked
+  point.accept <- rep_len(if(is.null(point.accept)) fixed else point.accept,nrow(data))
 
   ## Calculate system matrices
   ts <- as.POSIXct(data$date,tz="GMT")
