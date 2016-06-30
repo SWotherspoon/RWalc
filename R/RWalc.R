@@ -23,6 +23,33 @@ unwrapLon <- function(lon,lmin=-180)
   cumsum(c(wrapLon(lon[1],lmin),wrapLon(diff(lon))))
 
 
+##' Set Control Values for \code{crw}.
+##'
+##' Choose the numerical minimmization function used to fit the model,
+##' and set the associated control parameters.
+##'
+##' @title Control Values for crw.
+##' @param optim the numerical optimizer used in the fit
+##' @param verbose Enable tracing information.
+##' @param ... control parameters for the chosen optimizer
+##' @return Returns a list with components
+##'   \item{\code{optim}}{the name of the numerical optimizer as a
+##'   string, "nlminb" or "optim"}
+##'   \item{\code{control}}{list of control parameters for the optimizer}
+##' @seealso \code{\link{nlminb}}, \code{\link{optim}}.
+##' @export
+crwControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
+  optim <- match.arg(optim)
+  dots <- list(...)
+  ## Set default control values
+  pars <- switch(optim,
+                 nlminb=list(eval.max=3000,iter.max=2000,rel.tol=1.0e-3,x.tol=1.5e-2),
+                 optim=list(maxit=2000,reltol=1.0e-3))
+  ## Override control parameters
+  pars[names(dots)] <- dots
+  list(optim=optim,verbose=verbose,control=pars)
+}
+
 
 ##' Correlated Random Walk Filter
 ##'
@@ -82,8 +109,7 @@ unwrapLon <- function(lon,lmin=-180)
 ##'   errors for the x and y processes
 ##' @param tdf Degrees of freedom for the multivariate t error
 ##'   distribution.
-##' @param verbose Enable tracing information.
-##' @param control List of control parameters for \code{nlminb}.
+##' @param control List of control parameters (see \code{\link{crwControl}})
 ##' @return Returns a list with components
 ##'   \item{\code{summary}}{parameter summary table}
 ##'   \item{\code{par}}{vector of parameter estimates}
@@ -102,7 +128,7 @@ unwrapLon <- function(lon,lmin=-180)
 ##'   \item{x.v.se}{standard error of x component of velocity}
 ##'   \item{y.v.se}{standard error of y component of velocity}
 ##'   \item{observed}{whether this was an observed time}
-##'   \item{predicted}{whether this was an prediction time}
+##'   \item{predicted}{whether this was a prediction time}
 ##' @references
 ##'     Johnson, D. S., London, J. M., Lea, M. A. and Durban, J. W. (2008).
 ##'     Continuous-time correlated random walk model for animal telemetry data.
@@ -118,7 +144,7 @@ unwrapLon <- function(lon,lmin=-180)
 ##'     American Statistical Association, 84(408), 881-896.
 ##' @useDynLib RWalc
 ##' @importFrom TMB MakeADFun sdreport summary.sdreport
-##' @importFrom stats nlminb
+##' @importFrom stats nlminb optim
 ##' @export
 crw <- function(data,
                 predict=NULL,
@@ -126,8 +152,7 @@ crw <- function(data,
                 corPar=c("free","equal","fixed"),
                 velPar=c("free","equal","fixed"),
                 errPar=c("free","equal","fixed"),
-                tdf=-1,verbose=FALSE,
-                control = list(eval.max=2000,iter.max=1500,rel.tol=1.0e-3,x.tol=1.5e-2)) {
+                tdf=-1,control = crwControl()) {
 
   ## Set parameter constriants
   corPar <- match.arg(corPar)
@@ -187,13 +212,14 @@ crw <- function(data,
   tmb.pars <- list(logBeta=log(beta),logSigma=log(sigma),logTau=log(tau),mu=mu,nu=nu)
 
   ## TMB - create objective function
-  obj <- MakeADFun(tmb.data,tmb.pars,map,random=c("mu","nu"),DLL="RWalc",silent=!verbose)
-  obj$env$inner.control$trace <- verbose
-  obj$env$tracemgc <- verbose
+  obj <- MakeADFun(tmb.data,tmb.pars,map,random=c("mu","nu"),DLL="RWalc",silent=!control$verbose)
+  obj$env$inner.control$trace <- control$verbose
+  obj$env$tracemgc <- control$verbose
 
   ## Minimize objective function
-  opt <- suppressWarnings(
-    nlminb(obj$par,obj$fn,obj$gr,control=control))
+  opt <- switch(control$optim,
+                nlminb=suppressWarnings(nlminb(obj$par,obj$fn,obj$gr,control=control$control)),
+                optim=suppressWarnings(do.call(optim,c(obj,control=control["control"]))))
 
   ## Extract parameters and track
   sdrep <- sdreport(obj)
