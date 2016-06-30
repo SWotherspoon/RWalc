@@ -161,7 +161,7 @@ crw <- function(data,
 
   map <- list(
     logBeta=factor(switch(corPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))),
-    logSigma=factor(switch(velPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))),
+    logSigmaBeta=factor(switch(velPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))),
     logTau=factor(switch(errPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))))
 
   ## Preprocess data
@@ -209,7 +209,7 @@ crw <- function(data,
                                    data$y[data$segment==s],
                                    as.numeric(tms$date[tms$segment==s]),rule=2)$y
   }
-  tmb.pars <- list(logBeta=log(beta),logSigma=log(sigma),logTau=log(tau),mu=mu,nu=nu)
+  tmb.pars <- list(logBeta=log(beta),logSigmaBeta=log(sigma/beta),logTau=log(tau),mu=mu,nu=nu)
 
   ## TMB - create objective function
   obj <- MakeADFun(tmb.data,tmb.pars,map,random=c("mu","nu"),DLL="RWalc",silent=!control$verbose)

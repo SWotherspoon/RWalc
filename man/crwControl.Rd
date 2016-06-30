@@ -15,7 +15,8 @@ crwControl(optim = c("nlminb", "optim"), verbose = FALSE, ...)
 }
 \value{
 Returns a list with components
-  \item{\code{optim}}{the name of the numerical optimizer as a string, "nlminb" or "optim"}
+  \item{\code{optim}}{the name of the numerical optimizer as a
+  string, "nlminb" or "optim"}
   \item{\code{control}}{list of control parameters for the optimizer}
 }
 \description{
