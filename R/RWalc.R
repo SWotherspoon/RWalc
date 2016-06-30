@@ -129,15 +129,23 @@ crw <- function(data,
                 tdf=-1,verbose=FALSE,
                 control = list(eval.max=2000,iter.max=1500,rel.tol=1.0e-3,x.tol=1.5e-2)) {
 
+  ## Set parameter constriants
   corPar <- match.arg(corPar)
   velPar <- match.arg(velPar)
   errPar <- match.arg(errPar)
+
+  map <- list(
+    logBeta=factor(switch(corPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))),
+    logSigma=factor(switch(velPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))),
+    logTau=factor(switch(errPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))))
 
   ## Preprocess data
   data$date <- as.POSIXct(data$date,tz="GMT")
   if(is.null(data$x.se)) data$x.se <- 1
   if(is.null(data$y.se)) data$y.se <- 1
   if(is.null(data$segment)) data$segment <- 1
+  if(is.unsorted(order(data$segment,data$date)))
+    warning("Data should be ordered by segment and date within segment")
 
   ## Convert prediction times to dataframe of dates and segments
   if(is.null(predict)) predict <- data.frame(segment=numeric(0),date=numeric(0))
@@ -153,11 +161,6 @@ crw <- function(data,
   obs <- match(paste(data$segment,as.numeric(data$date),sep="\r"),tab)
   prd <- match(paste(predict$segment,as.numeric(predict$date),sep="\r"),tab)
 
-  ## Control parameters
-  map <- list(
-    logBeta=factor(switch(corPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))),
-    logSigma=factor(switch(velPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))),
-    logTau=factor(switch(errPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))))
 
   ## TMB data
   y <- cbind(data$x,data$y)
