@@ -153,7 +153,6 @@ crw <- function(data,
   obs <- match(paste(data$segment,as.numeric(data$date),sep="\r"),tab)
   prd <- match(paste(predict$segment,as.numeric(predict$date),sep="\r"),tab)
 
-
   ## Control parameters
   map <- list(
     logBeta=factor(switch(corPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))),
@@ -171,9 +170,17 @@ crw <- function(data,
   beta <- par[1:2]
   sigma <- par[3:4]
   tau <- par[5:6]
-  mu <- cbind(approx(as.numeric(data$date),data$x,as.numeric(tms$date),rule=2)$y,
-              approx(as.numeric(data$date),data$y,as.numeric(tms$date),rule=2)$y)
+  mu <- matrix(0,nrow(tms),2)
   nu <- matrix(0,nrow(tms),2)
+  ## Interpolate in each segment to generate initial mu
+  for(s in unique(tms$segment)) {
+    mu[tms$segment==s,1] <- approx(as.numeric(data$date[data$segment==s]),
+                                   data$x[data$segment==s],
+                                   as.numeric(tms$date[tms$segment==s]),rule=2)$y
+    mu[tms$segment==s,2] <- approx(as.numeric(data$date[data$segment==s]),
+                                   data$y[data$segment==s],
+                                   as.numeric(tms$date[tms$segment==s]),rule=2)$y
+  }
   tmb.pars <- list(logBeta=log(beta),logSigma=log(sigma),logTau=log(tau),mu=mu,nu=nu)
 
   ## TMB - create objective function
@@ -207,7 +214,8 @@ crw <- function(data,
   r <- list(summary=fxd,par=fxd[,1],track=track,data=data,opt=opt,obj=obj)
   class(r) <- "RWalc"
   r
-  }
+}
+
 
 
 ##' Extract Predicted Track
@@ -421,19 +429,25 @@ system.matrices <- function(beta,sigma,dt) {
 ##'    \item{2} the location is fixed and the point may be a cusp
 ##'             (autocorrelation is reset).
 ##' }
-##' In the current implementation the first location must always be
-##' fixed.  The \code{fixed.err} parameter specifies the covariance of
-##' the error in the fixed points, allowing the user to control how
-##' acccurately the simulated track reproduces the four components
-##' (locations and velocities) of the fixed points.
+##'
+##' In the current implementation the first location in each segment
+##' must be fixed.  The \code{fixed.err} parameter specifies the
+##' covariance of the error in the fixed points, allowing the user to
+##' control how acccurately the simulated track reproduces the four
+##' components (locations and velocities) of the fixed points.
 ##'
 ##' Additional constraints can be placed on the path by rejection
 ##' sampling through the function \code{point.check}.  This function
-##' must accept a time, x and y and return a boolean indicating
+##' must accept a time, x and y and return a logical indicating
 ##' whether the point is acceptable.  For example, the track can be
 ##' constrained to the ocean by supplying a \code{point.check}
 ##' function that compares the state to a land mask and returns
 ##' \code{FALSE} for locations on land.
+##'
+##' The \code{point.accept} can be used to mark points that should not
+##' be checked in the rejection step.  Currently this defaults to the
+##' value of \code{fixed} - so that by default fixed points are never
+##' checked.
 ##'
 ##' Tracks are simulated in the plane.  There is is no polar
 ##' correction and without a suitable \code{point.check} function,
@@ -446,8 +460,13 @@ system.matrices <- function(beta,sigma,dt) {
 ##' @param fixed An integer vector indicating which locations in the
 ##'   template path are to be held fixed.
 ##' @param fixed.err Covariance matrix for fixed points.
-##' @param point.check A function that accepts a time, x and y and
-##'   returns boolean indicating whether the state is acceptable.
+##' @param point.check A function that accepts a time, and an x,y
+##'   location and returns a logical indicating whether the location
+##'   is acceptable.
+##' @param point.accept A logical vector indicating which locations
+##'   should not be checked with the \code{point.check} function.
+##'   Defaults to the value of \code{fixed}.
+##'
 ##' @return Returns a dataframe representing the simulated track with
 ##'   columns
 ##'   \item{segment}{track segment}
@@ -460,7 +479,8 @@ system.matrices <- function(beta,sigma,dt) {
 ##' @export
 crwSimulate <- function(data,par,fixed=NULL,
                         fixed.err=diag(1.0E-6,4,4),
-                        point.check=function(tm,x,y) TRUE) {
+                        point.check=function(tm,x,y) TRUE,
+                        point.accept=NULL) {
 
   beta <- par[1:2]
   sigma <- par[3:4]
@@ -468,10 +488,12 @@ crwSimulate <- function(data,par,fixed=NULL,
 
   ## First state in each segment must be fixed, and the simulation is
   ## reset at the end of each segment
-  seg <- if(!is.null(data$segment)) data$segment else rep(1,nrow(data))
-  fixed <- if(!is.null(fixed)) fixed else rep(FALSE,nrow(data))
+  seg <- rep_len(if(is.null(data$segment)) 1 else data$segment,nrow(data))
+  fixed <- rep_len(if(is.null(fixed)) FALSE else fixed,nrow(data))
   fixed[match(unique(seg),seg)] <- TRUE
   reset <- c(diff(seg)!=0,TRUE)
+  ## By default, fixed points are not checked
+  point.accept <- rep_len(if(is.null(point.accept)) fixed else point.accept,nrow(data))
 
   ## Calculate system matrices
   ts <- as.POSIXct(data$date,tz="GMT")
@@ -527,7 +549,7 @@ crwSimulate <- function(data,par,fixed=NULL,
       ## point.check/rejection loop
       for(r in 1:100) {
         x <- mu + drop(rnorm(length(mu))%*%R)
-        if(fixed[k] || point.check(ts[k],x[1],x[2])) break
+        if(point.accept[k] || point.check(ts[k],x[1],x[2])) break
         ## If fail, return last fixed point
         if(r==100) return(k0)
       }
