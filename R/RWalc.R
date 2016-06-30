@@ -129,15 +129,23 @@ crw <- function(data,
                 tdf=-1,verbose=FALSE,
                 control = list(eval.max=2000,iter.max=1500,rel.tol=1.0e-3,x.tol=1.5e-2)) {
 
+  ## Set parameter constriants
   corPar <- match.arg(corPar)
   velPar <- match.arg(velPar)
   errPar <- match.arg(errPar)
+
+  map <- list(
+    logBeta=factor(switch(corPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))),
+    logSigma=factor(switch(velPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))),
+    logTau=factor(switch(errPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))))
 
   ## Preprocess data
   data$date <- as.POSIXct(data$date,tz="GMT")
   if(is.null(data$x.se)) data$x.se <- 1
   if(is.null(data$y.se)) data$y.se <- 1
   if(is.null(data$segment)) data$segment <- 1
+  if(is.unsorted(order(data$segment,data$date)))
+    warning("Data should be ordered by segment and date within segment")
 
   ## Convert prediction times to dataframe of dates and segments
   if(is.null(predict)) predict <- data.frame(segment=numeric(0),date=numeric(0))
@@ -154,12 +162,6 @@ crw <- function(data,
   prd <- match(paste(predict$segment,as.numeric(predict$date),sep="\r"),tab)
 
 
-  ## Control parameters
-  map <- list(
-    logBeta=factor(switch(corPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))),
-    logSigma=factor(switch(velPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))),
-    logTau=factor(switch(errPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))))
-
   ## TMB data
   y <- cbind(data$x,data$y)
   w <- cbind(data$x.se,data$y.se)
@@ -171,10 +173,17 @@ crw <- function(data,
   beta <- par[1:2]
   sigma <- par[3:4]
   tau <- par[5:6]
-
-  mu <- cbind(approx(as.numeric(data$date),data$x,as.numeric(tms$date),rule=2)$y,
-              approx(as.numeric(data$date),data$y,as.numeric(tms$date),rule=2)$y)
+  mu <- matrix(0,nrow(tms),2)
   nu <- matrix(0,nrow(tms),2)
+  ## Interpolate in each segment to generate initial mu
+  for(s in unique(tms$segment)) {
+    mu[tms$segment==s,1] <- approx(as.numeric(data$date[data$segment==s]),
+                                   data$x[data$segment==s],
+                                   as.numeric(tms$date[tms$segment==s]),rule=2)$y
+    mu[tms$segment==s,2] <- approx(as.numeric(data$date[data$segment==s]),
+                                   data$y[data$segment==s],
+                                   as.numeric(tms$date[tms$segment==s]),rule=2)$y
+  }
   tmb.pars <- list(logBeta=log(beta),logSigma=log(sigma),logTau=log(tau),mu=mu,nu=nu)
 
   ## TMB - create objective function
@@ -208,7 +217,8 @@ crw <- function(data,
   r <- list(summary=fxd,par=fxd[,1],track=track,data=data,opt=opt,obj=obj)
   class(r) <- "RWalc"
   r
-  }
+}
+
 
 
 ##' Extract Predicted Track
