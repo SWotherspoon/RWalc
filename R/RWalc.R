@@ -82,9 +82,9 @@ crwControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
 ##' \eqn{\tau}{tau} model parameters. If these columns are missing,
 ##' they are assumed to be 1.
 ##'
-##' The \code{corPar}, \code{velPar}, \code{errPar} arguments control
-##' how the correlation parameters \eqn{\beta}{beta}, the standard
-##' deviations of the innovations for the velocity process
+##' The arguments \code{betaPar}, \code{sigmaPar} and \code{tauPar}
+##' control how the correlation parameters \eqn{\beta}{beta}, the
+##' standard deviations of the innovations for the velocity process
 ##' \eqn{\sigma}{sigma} and the error scaling parameters
 ##' \eqn{\tau}{tau} apply to the x and y processes:
 ##'
@@ -101,11 +101,11 @@ crwControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
 ##' @param predict A vector of times (as POSIXct) or a dataframe of
 ##'   segments and times for which to predict locations.
 ##' @param par Vector of initial parameter estimates.
-##' @param corPar Controls the autocorrelaion parameter for x and y
+##' @param betaPar Controls the autocorrelaion parameter for x and y
 ##'   processes.
-##' @param velPar Controls the standard deviation parameters for the
+##' @param sigmaPar Controls the standard deviation parameters for the
 ##'   stochastic innovations of the velocity for the x and y processes.
-##' @param errPar Controls the scaling parameter for the observational
+##' @param tauPar Controls the scaling parameter for the observational
 ##'   errors for the x and y processes
 ##' @param tdf Degrees of freedom for the multivariate t error
 ##'   distribution.
@@ -149,20 +149,19 @@ crwControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
 crw <- function(data,
                 predict=NULL,
                 par=c(1,1,1,1,1,1),
-                corPar=c("free","equal","fixed"),
-                velPar=c("free","equal","fixed"),
-                errPar=c("free","equal","fixed"),
+                betaPar=c("free","equal","fixed"),
+                sigmaPar=c("free","equal","fixed"),
+                tauPar=c("free","equal","fixed"),
                 tdf=-1,control = crwControl()) {
 
-  ## Set parameter constriants
-  corPar <- match.arg(corPar)
-  velPar <- match.arg(velPar)
-  errPar <- match.arg(errPar)
-
+  ## Set parameter constraints
+  betaPar <- match.arg(betaPar)
+  sigmaPar <- match.arg(sigmaPar)
+  tauPar <- match.arg(tauPar)
   map <- list(
-    logBeta=factor(switch(corPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))),
-    logSigmaBeta=factor(switch(velPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))),
-    logTau=factor(switch(errPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))))
+    logBeta=factor(switch(betaPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))),
+    logSigma=factor(switch(sigmaPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))),
+    logTau=factor(switch(tauPar,free=c(1,2),equal=c(1,1),fixed=c(NA,NA))))
 
   ## Preprocess data
   data$date <- as.POSIXct(data$date,tz="GMT")
@@ -186,6 +185,17 @@ crw <- function(data,
   obs <- match(paste(data$segment,as.numeric(data$date),sep="\r"),tab)
   prd <- match(paste(predict$segment,as.numeric(predict$date),sep="\r"),tab)
 
+  ## Interpolate in each segment to generate initial mu
+  mu <- matrix(0,nrow(tms),2)
+  nu <- matrix(0,nrow(tms),2)
+  for(s in unique(tms$segment)) {
+    mu[tms$segment==s,1] <- approx(as.numeric(data$date[data$segment==s]),
+                                   data$x[data$segment==s],
+                                   as.numeric(tms$date[tms$segment==s]),rule=2)$y
+    mu[tms$segment==s,2] <- approx(as.numeric(data$date[data$segment==s]),
+                                   data$y[data$segment==s],
+                                   as.numeric(tms$date[tms$segment==s]))$y
+  }
 
   ## TMB data
   y <- cbind(data$x,data$y)
@@ -209,7 +219,7 @@ crw <- function(data,
                                    data$y[data$segment==s],
                                    as.numeric(tms$date[tms$segment==s]),rule=2)$y
   }
-  tmb.pars <- list(logBeta=log(beta),logSigmaBeta=log(sigma/beta),logTau=log(tau),mu=mu,nu=nu)
+  tmb.pars <- list(logBeta=log(beta),logSigma=log(sigma),logTau=log(tau),mu=mu,nu=nu)
 
   ## TMB - create objective function
   obj <- MakeADFun(tmb.data,tmb.pars,map,random=c("mu","nu"),DLL="RWalc",silent=!control$verbose)
@@ -240,9 +250,8 @@ crw <- function(data,
                        "observed",
                        "predicted")
 
-  r <- list(summary=fxd,par=fxd[,1],track=track,data=data,opt=opt,obj=obj)
-  class(r) <- "RWalc"
-  r
+  structure(list(summary=fxd,par=fxd[,1],track=track,data=data,opt=opt,obj=obj),
+            class="RWalc")
 }
 
 
@@ -605,6 +614,9 @@ crwSimulate <- function(data,par,fixed=NULL,
   }
   NULL
 }
+
+
+
 
 
 
