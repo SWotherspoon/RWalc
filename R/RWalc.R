@@ -252,10 +252,13 @@ crw <- function(data,
 ##'
 ##' @title Extract Fitted Track
 ##' @param object A fitted object from \code{crw}.
-##' @param all If \code{FALSE} return just the date and spatial coordinates.
+##' @param vel Logical indicating whether estimated velocities should
+##'   be returned.
+##' @param se Logical indicating whether estimated standard errors
+##'   should be returned.
 ##' @param ... Ignored.
-##' @return If \code{all=TRUE} return a dataframe of predicted track
-##'   locations with columns
+##' @return If \code{vel} and \code{se} are true, return a dataframe
+##'   of predicted track locations with columns
 ##'   \item{segment}{track segment}
 ##'   \item{date}{time (as GMT POSIXct)}
 ##'   \item{x}{x coordinate}
@@ -266,11 +269,17 @@ crw <- function(data,
 ##'   \item{y.se}{standard error of y coordinate}
 ##'   \item{x.v.se}{standard error of x component of velocity}
 ##'   \item{y.v.se}{standard error of x component of velocity}
-##' Otherwise only the first four columns are returned
+##' Otherwise only the appropriate subset of columns are returned
 ##' @export
-predict.RWalc <- function(object,all=FALSE,...) {
-  object$track[object$track$predicted,if(all) 1:10 else 1:4]
+##'
+predict.RWalc <- function(object,vel=FALSE,se=FALSE,...) {
+  if(vel)
+    cols <- if(se) 1:10 else 1:6
+  else
+    cols <- if(se) c(1:4,7:8) else 1:4
+  object$track[object$track$predicted,cols]
 }
+
 
 
 ##' Extract Fitted Track
@@ -281,10 +290,13 @@ predict.RWalc <- function(object,all=FALSE,...) {
 ##'
 ##' @title Extract Fitted Track
 ##' @param object A fitted object from \code{crw}.
-##' @param all If \code{FALSE} return just the date and spatial coordinates.
+##' @param vel Logical indicating whether estimated velocities
+##'   should be returned.
+##' @param se Logical indicating whether estimated standard errors
+##'   should be returned.
 ##' @param ... Ignored.
-##' @return If \code{all=TRUE} return a dataframe of fitted track
-##'   locations with columns
+##' @return If \code{vel} and \code{se} are true, return a dataframe
+##'   of fitted track locations with columns
 ##'   \item{segment}{track segment}
 ##'   \item{date}{time (as GMT POSIXct)}
 ##'   \item{x}{x coordinate}
@@ -295,10 +307,14 @@ predict.RWalc <- function(object,all=FALSE,...) {
 ##'   \item{y.se}{standard error of y coordinate}
 ##'   \item{x.v.se}{standard error of x component of velocity}
 ##'   \item{y.v.se}{standard error of x component of velocity}
-##' Otherwise only the first four columns are returned.
+##' Otherwise only the appropriate subset of columns are returned.
 ##' @export
-fitted.RWalc <- function(object,all=FALSE,...) {
-  object$track[object$track$observed,if(all) 1:10 else 1:4]
+fitted.RWalc <- function(object,vel=FALSE,se=FALSE,...) {
+  if(vel)
+    cols <- if(se) 1:10 else 1:6
+  else
+    cols <- if(se) c(1:4,7:8) else 1:4
+  object$track[object$track$observed,cols]
 }
 
 
@@ -473,7 +489,7 @@ system.matrices <- function(beta,sigma,dt) {
 ##'
 ##' The \code{point.accept} can be used to mark points that should not
 ##' be checked in the rejection step.  Currently this defaults to the
-##' value of \code{fixed} - so that by default fixed points are never
+##' value of \code{fixed} - so by default fixed points are never
 ##' checked.
 ##'
 ##' Tracks are simulated in the plane.  There is is no polar
@@ -511,7 +527,6 @@ crwSimulate <- function(data,par,fixed=NULL,
 
   beta <- par[1:2]
   sigma <- par[3:4]
-
 
   ## First state in each segment must be fixed, and the simulation is
   ## reset at the end of each segment

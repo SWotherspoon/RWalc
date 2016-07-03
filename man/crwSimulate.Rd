@@ -70,7 +70,7 @@ function that compares the state to a land mask and returns
 
 The \code{point.accept} can be used to mark points that should not
 be checked in the rejection step.  Currently this defaults to the
-value of \code{fixed} - so that by default fixed points are never
+value of \code{fixed} - so by default fixed points are never
 checked.
 
 Tracks are simulated in the plane.  There is is no polar
