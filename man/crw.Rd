@@ -4,9 +4,9 @@
 \alias{crw}
 \title{Correlated Random Walk Filter}
 \usage{
-crw(data, predict = NULL, par = c(1, 1, 1, 1, 1, 1), corPar = c("free",
-  "equal", "fixed"), velPar = c("free", "equal", "fixed"),
-  errPar = c("free", "equal", "fixed"), tdf = -1, control = crwControl())
+crw(data, predict = NULL, par = c(1, 1, 1, 1, 1, 1), betaPar = c("free",
+  "equal", "fixed"), sigmaPar = c("free", "equal", "fixed"),
+  tauPar = c("free", "equal", "fixed"), tdf = -1, control = crwControl())
 }
 \arguments{
 \item{data}{A dataframe representing the track (see details).}
@@ -16,13 +16,13 @@ segments and times for which to predict locations.}
 
 \item{par}{Vector of initial parameter estimates.}
 
-\item{corPar}{Controls the autocorrelaion parameter for x and y
+\item{betaPar}{Controls the autocorrelaion parameter for x and y
 processes.}
 
-\item{velPar}{Controls the standard deviation parameters for the
+\item{sigmaPar}{Controls the standard deviation parameters for the
 stochastic innovations of the velocity for the x and y processes.}
 
-\item{errPar}{Controls the scaling parameter for the observational
+\item{tauPar}{Controls the scaling parameter for the observational
 errors for the x and y processes}
 
 \item{tdf}{Degrees of freedom for the multivariate t error
@@ -84,9 +84,9 @@ are have standard deviations 'x.se' and 'y.se' scaled by the
 \eqn{\tau}{tau} model parameters. If these columns are missing,
 they are assumed to be 1.
 
-The \code{corPar}, \code{velPar}, \code{errPar} arguments control
-how the correlation parameters \eqn{\beta}{beta}, the standard
-deviations of the innovations for the velocity process
+The arguments \code{betaPar}, \code{sigmaPar} and \code{tauPar}
+control how the correlation parameters \eqn{\beta}{beta}, the
+standard deviations of the innovations for the velocity process
 \eqn{\sigma}{sigma} and the error scaling parameters
 \eqn{\tau}{tau} apply to the x and y processes:
 
