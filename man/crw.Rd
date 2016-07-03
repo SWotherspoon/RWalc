@@ -6,9 +6,7 @@
 \usage{
 crw(data, predict = NULL, par = c(1, 1, 1, 1, 1, 1), corPar = c("free",
   "equal", "fixed"), velPar = c("free", "equal", "fixed"),
-  errPar = c("free", "equal", "fixed"), tdf = -1, verbose = FALSE,
-  control = list(eval.max = 2000, iter.max = 1500, rel.tol = 0.001, x.tol =
-  0.015))
+  errPar = c("free", "equal", "fixed"), tdf = -1, control = crwControl())
 }
 \arguments{
 \item{data}{A dataframe representing the track (see details).}
@@ -30,9 +28,7 @@ errors for the x and y processes}
 \item{tdf}{Degrees of freedom for the multivariate t error
 distribution.}
 
-\item{verbose}{Enable tracing information.}
-
-\item{control}{List of control parameters for \code{nlminb}.}
+\item{control}{List of control parameters (see \code{\link{crwControl}})}
 }
 \value{
 Returns a list with components
@@ -53,7 +49,7 @@ The \code{track} dataframe has columns
   \item{x.v.se}{standard error of x component of velocity}
   \item{y.v.se}{standard error of y component of velocity}
   \item{observed}{whether this was an observed time}
-  \item{predicted}{whether this was an prediction time}
+  \item{predicted}{whether this was a prediction time}
 }
 \description{
 Correlated Random Walk Filter
