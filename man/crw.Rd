@@ -4,15 +4,19 @@
 \alias{crw}
 \title{Correlated Random Walk Filter}
 \usage{
-crw(data, predict = NULL, par = c(1, 1, 1, 1, 1, 1), betaPar = c("free",
-  "equal", "fixed"), sigmaPar = c("free", "equal", "fixed"),
-  tauPar = c("free", "equal", "fixed"), tdf = -1, control = crwControl())
+crw(data, predict = NULL, track = NULL, par = c(1, 1, 1, 1, 1, 1),
+  betaPar = c("free", "equal", "fixed"), sigmaPar = c("free", "equal",
+  "fixed"), tauPar = c("free", "equal", "fixed"), tdf = -1,
+  control = crwControl())
 }
 \arguments{
 \item{data}{A dataframe representing the track (see details).}
 
 \item{predict}{A vector of times (as POSIXct) or a dataframe of
-segments and times for which to predict locations.}
+segments and times for which to predict locations.  Ignored if
+\code{track} is provided.}
+
+\item{track}{Dataframe representing an initial estimate of the track (see details).}
 
 \item{par}{Vector of initial parameter estimates.}
 
@@ -20,7 +24,8 @@ segments and times for which to predict locations.}
 processes.}
 
 \item{sigmaPar}{Controls the standard deviation parameters for the
-stochastic innovations of the velocity for the x and y processes.}
+stochastic innovations of the velocity for the x and y
+processes.}
 
 \item{tauPar}{Controls the scaling parameter for the observational
 errors for the x and y processes}
@@ -28,7 +33,8 @@ errors for the x and y processes}
 \item{tdf}{Degrees of freedom for the multivariate t error
 distribution.}
 
-\item{control}{List of control parameters (see \code{\link{crwControl}})}
+\item{control}{List of control parameters (see
+\code{\link{crwControl}})}
 }
 \value{
 Returns a list with components
@@ -36,41 +42,28 @@ Returns a list with components
   \item{\code{par}}{vector of parameter estimates}
   \item{\code{track}}{dataframe of the fitted track}
   \item{\code{opt}}{the object returned by the optimizer}
-  \item{\code{tmb}}{the \pkg{TMB} object}
-The \code{track} dataframe has columns
-  \item{segment}{track segment}
-  \item{date}{time (as GMT POSIXct)}
-  \item{x}{x coordinate}
-  \item{y}{y coordinate}
-  \item{x.v}{x component of velocity}
-  \item{y.v}{y component of velocity}
-  \item{x.se}{standard error of x coordinate}
-  \item{y.se}{standard error of y coordinate}
+  \item{\code{tmb}}{the \pkg{TMB} object} The \code{track}
+  dataframe has columns \item{segment}{track segment}
+  \item{date}{time (as GMT POSIXct)} \item{x}{x coordinate}
+  \item{y}{y coordinate} \item{x.v}{x component of velocity}
+  \item{y.v}{y component of velocity} \item{x.se}{standard error
+  of x coordinate} \item{y.se}{standard error of y coordinate}
   \item{x.v.se}{standard error of x component of velocity}
   \item{y.v.se}{standard error of y component of velocity}
   \item{observed}{whether this was an observed time}
   \item{predicted}{whether this was a prediction time}
 }
 \description{
-Correlated Random Walk Filter
+Fit a continuous time correlated random walk to filter a track and
+predict locations for given time steps.
 }
 \details{
-Fit a correlated random walk to filter a track and predict
-locations for given time steps.  The movement model is as
-described in Johnson et al. (2008), but without drift or haul out
-components, but assumes t distributed errors as described by
-Albertsen et al. (2015) if \code{tdf} is positive.
-
-The input track must be given as a dataframe where each row is an
-observed location, with columns
-\tabular{ll}{
-segment \tab track segment (integer, optional) \cr
-date \tab observation time (as GMT POSIXct) \cr
-x \tab observed x coordinate \cr
-y \tab observed y coordinate \cr
-x.se \tab standard error of the x coordinate (optional) \cr
-y.se \tab standard error of the y coordinate (optional) \cr
-}
+The filter fits a continuous time correlated random walk movement
+model similar to that described in Johnson et al. (2008) and
+implemented in the package \pkg{crawl}.  Unlike the crawl model,
+the model implemented here has no drift or haul out components,
+and assumes t distributed errors as described by Albertsen et
+al. (2015) if \code{tdf} is positive.
 
 The track may consist of several independent segments.  These may
 represent either non-overlapping segments of a single track, or
@@ -79,17 +72,47 @@ is correlated within a segment, but segments are assumed
 independent. It is assumed the input dataframe is ordered by
 segment and by date within segment.
 
+The input track to be filtered is supplied as a dataframe
+(\code{data}) where each row is an observed location, with columns
+\tabular{ll}{
+segment \tab track segment (integer, optional) \cr
+date \tab observation time (as GMT POSIXct) \cr
+x \tab observed x coordinate \cr
+y \tab observed y coordinate \cr
+x.se \tab standard error of the x coordinate (optional) \cr
+y.se \tab standard error of the y coordinate (optional) \cr
+}
 The filtering model assumes the errors in the spatial coordinates
 are have standard deviations 'x.se' and 'y.se' scaled by the
 \eqn{\tau}{tau} model parameters. If these columns are missing,
 they are assumed to be 1.
+
+The input track is filtered, and fitted locations are returned for
+the observed times in the input track and predictions are made for
+any additional times specified by the \code{track} or
+\code{predict} arguments.
+
+The \code{track} argument provides an initial estimate of the
+fitted track, and must be specified in the format returned by
+\code{interpolateTrack}.  When this argument is \code{NULL}, is is
+calculated as \code{interpolateTrack(data,predict)}.
+
+The \code{predict} argument specifies prediction times for which
+locations along the track will be predicted.  When the track
+consists of a single segment, these argument may be a vector of
+POSIXct times, otherwise it must be a dataframe with columns
+\tabular{ll}{
+segment \tab track segment (integer, optional) \cr
+date \tab prediction time (as GMT POSIXct)
+}
+If \code{track} is given, the prediction times are determined from
+the \code{track} argument and this argument is ignored.
 
 The arguments \code{betaPar}, \code{sigmaPar} and \code{tauPar}
 control how the correlation parameters \eqn{\beta}{beta}, the
 standard deviations of the innovations for the velocity process
 \eqn{\sigma}{sigma} and the error scaling parameters
 \eqn{\tau}{tau} apply to the x and y processes:
-
 \tabular{ll}{
 \code{"free"} \tab independent parameters are estimated for
     x and y \cr
@@ -99,9 +122,9 @@ standard deviations of the innovations for the velocity process
 }
 }
 \references{
-Johnson, D. S., London, J. M., Lea, M. A. and Durban, J. W. (2008).
-    Continuous-time correlated random walk model for animal telemetry data.
-    Ecology, 89(5), 1208-1215.
+Johnson, D. S., London, J. M., Lea, M. A. and Durban,
+  J. W. (2008).  Continuous-time correlated random walk model for
+  animal telemetry data.  Ecology, 89(5), 1208-1215.
 
     Albertsen, C. M., Whoriskey, K., Yurkowski, D., Nielsen,
     A. and Flemming, J. M. (2015).  Fast fitting of non-Gaussian

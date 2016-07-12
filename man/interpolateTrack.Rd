@@ -2,35 +2,62 @@
 % Please edit documentation in R/RWalc.R
 \name{interpolateTrack}
 \alias{interpolateTrack}
-\title{Interpolate Track}
+\title{Track Interpolation}
 \usage{
-interpolateTrack(data, tstep = 60 * 60)
+interpolateTrack(data, predict = NULL, method = c("approx", "loess", "gc",
+  "mean"), loess.span = 0.1)
 }
 \arguments{
-\item{data}{A dataframe representing a track}
+\item{data}{A dataframe representing the track (see details).}
 
-\item{tstep}{the time step to resample to (in seconds)}
+\item{predict}{A vector of times (POSIXct) or a dataframe of
+segments and times for which to predict locations.}
+
+\item{method}{Method used to interpolate the track.}
+
+\item{loess.span}{Span used in the loess smooth.}
 }
 \value{
-a dataframe with columns
-  \item{\code{date}}{observation time (as POSIXct)}
-  \item{\code{x}}{interpolated x coordinate}
-  \item{\code{y}}{interpolated y coordinate}
+Returns a dataframe with columns
+  \item{segment}{track segment}
+  \item{date}{time (as GMT POSIXct)}
+  \item{observed}{whether this was an observed time}
+  \item{predicted}{whether this was a predicted time}
+  \item{x}{x coordinate}
+  \item{y}{y coordinate}
 }
 \description{
-Resample a Track by Linear Interpolation
+\code{interpolateTrack} interpolates a track to a given set of
+time points by one of several methods.
 }
 \details{
-Linearly interpolate in the spatial coordinates to resample a
-track back to a regular time step.
+The track may consist of several independent segments.  These may
+represent either non-overlapping segments of a single track, or
+distinct tracks that may overlap in time.
 
 The input track must be given as a dataframe where each row is an
 observed location, with columns
 \tabular{ll}{
-segment \tab track segment \cr
-date \tab observation time (as GMT POSIXct) \cr
-x \tab observed x coordinate \cr
-y \tab observed y coordinate \cr
+\code{segment} \tab integer label for segment (optional) \cr
+\code{date} \tab observation time (GMT POSIXct) \cr
+\code{x} \tab observed x coordinate \cr
+\code{y} \tab observed y coordinate \cr
+\code{x.se} \tab standard error of the x coordinate (optional) \cr
+\code{y.se} \tab standard error of the y coordinate (optional) \cr
 }
+It is assumed the input dataframe is ordered by segment and by
+date within segment.
+
+Several interpolation/smoothing methods are available
+\describe{
+\item{"approx"}{linear interpolation in x and y}
+\item{"loess"}{loess smoothing in x and y}
+\item{"gc"}{Assumes x is longitude and y is latitude and
+interpolates along a great circle}
+\item{"mean"}{the track is replaced by its weighted centroid}
+}
+
+The interpolated track is returned as a dataframe containing both
+the interpolated and original locations.
 }
 

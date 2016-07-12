@@ -1,5 +1,3 @@
-##' Wrapping Locations Around the Dateline
-##'
 ##' These functions wrap and unwrap a sequence of longitudes around
 ##' the dateline.
 ##'
@@ -9,7 +7,7 @@
 ##' [lmin,lmin+360), but the subsequent longitudes in the sequence may
 ##' wander outside that range.
 ##'
-##' @title Dateline adjustment
+##' @title Wrapping Locations Around the Dateline.
 ##' @param lon a vector of longitudes
 ##' @param lmin western boundary for wrapped longitudes
 ##' @return a vector of longitudes
@@ -23,10 +21,145 @@ unwrapLon <- function(lon,lmin=-180)
   cumsum(c(wrapLon(lon[1],lmin),wrapLon(diff(lon))))
 
 
-##' Set Control Values for \code{crw}.
+##' \code{interpolateTrack} interpolates a track to a given set of
+##' time points by one of several methods.
 ##'
-##' Choose the numerical minimmization function used to fit the model,
-##' and set the associated control parameters.
+##' The track may consist of several independent segments.  These may
+##' represent either non-overlapping segments of a single track, or
+##' distinct tracks that may overlap in time.
+##'
+##' The input track must be given as a dataframe where each row is an
+##' observed location, with columns
+##' \tabular{ll}{
+##' \code{segment} \tab integer label for segment (optional) \cr
+##' \code{date} \tab observation time (GMT POSIXct) \cr
+##' \code{x} \tab observed x coordinate \cr
+##' \code{y} \tab observed y coordinate \cr
+##' \code{x.se} \tab standard error of the x coordinate (optional) \cr
+##' \code{y.se} \tab standard error of the y coordinate (optional) \cr
+##' }
+##' It is assumed the input dataframe is ordered by segment and by
+##' date within segment.
+##'
+##' Several interpolation/smoothing methods are available
+##' \describe{
+##' \item{"approx"}{linear interpolation in x and y}
+##' \item{"loess"}{loess smoothing in x and y}
+##' \item{"gc"}{Assumes x is longitude and y is latitude and
+##' interpolates along a great circle}
+##' \item{"mean"}{the track is replaced by its weighted centroid}
+##' }
+##'
+##' The interpolated track is returned as a dataframe containing both
+##' the interpolated and original locations.
+##'
+##' @title Track Interpolation
+##' @param data A dataframe representing the track (see details).
+##' @param predict A vector of times (POSIXct) or a dataframe of
+##'   segments and times for which to predict locations.
+##' @param method Method used to interpolate the track.
+##' @param loess.span Span used in the loess smooth.
+##' @return Returns a dataframe with columns
+##'   \item{segment}{track segment}
+##'   \item{date}{time (as GMT POSIXct)}
+##'   \item{observed}{whether this was an observed time}
+##'   \item{predicted}{whether this was a predicted time}
+##'   \item{x}{x coordinate}
+##'   \item{y}{y coordinate}
+##' @importFrom stats approx loess predict loess.control weighted.mean
+##' @export
+interpolateTrack <- function(data,predict=NULL,
+                             method=c("approx","loess","gc","mean"),
+                             loess.span=0.1) {
+
+  ## Select interpolation method
+  method <- match.arg(method)
+
+  ## Preprocess data
+  data$date <- as.POSIXct(data$date,tz="GMT")
+  if(is.null(data$x.se)) data$x.se <- 1
+  if(is.null(data$y.se)) data$y.se <- 1
+  if(is.null(data$segment)) data$segment <- 1
+  if(is.unsorted(order(data$segment,data$date)))
+    warning("Data should be ordered by segment and date within segment")
+
+  ## Convert prediction times to dataframe of dates and segments
+  if(is.null(predict)) predict <- data.frame(segment=numeric(0),date=numeric(0))
+  if(!is.data.frame(predict))
+    predict <- data.frame(
+      segment=round(approx(as.numeric(data$date),data$segment,as.numeric(predict),rule=2)$y),
+      date=predict)
+
+  ## Interleave times
+  track <- unique(rbind(data[,c("segment","date")],predict[,c("segment","date")]))
+  track <- track[order(track$segment,track$date),]
+
+  ## Which locations are observed and which predicted
+  tab <- paste(track$segment,as.numeric(track$date),sep="\r")
+  track$observed <- tab %in% paste(data$segment,as.numeric(data$date),sep="\r")
+  track$predicted <- tab %in% paste(predict$segment,as.numeric(predict$date),sep="\r")
+
+  ## Create interpolation function
+  interp <- switch(
+    method,
+    ## Linear interpolation in x,y
+    approx=function(data,tms) {
+      cbind(approx(as.numeric(data$date),data$x,as.numeric(tms))$y,
+            approx(as.numeric(data$date),data$y,as.numeric(tms))$y)
+    },
+    ## Loess smooth in x, y
+    loess=function(data,tms) {
+      fit.x <- loess(x~as.numeric(date),data=data,weights=1/data$x.se^2,
+                     span=loess.span,na.action="na.exclude",
+                     control=loess.control(surface="direct"))
+      fit.y <- loess(y~as.numeric(date),data=data,weights=1/data$y.se^2,
+                     span=loess.span,na.action="na.exclude",
+                     control=loess.control(surface="direct"))
+      cbind(x=predict(fit.x,newdata=data.frame(date=as.numeric(tms))),
+            y=predict(fit.y,newdata=data.frame(date=as.numeric(tms))))
+    },
+    ## Assumes x=lon, y=lat and interpolates along a great circle
+    gc=function(data,tms) {
+      knots <- as.numeric(data$date)
+      ks <- unclass(cut(as.numeric(tms),knots,include.lowest=TRUE))
+      f <- (as.numeric(tms)-knots[ks])/(knots[ks+1]-knots[ks])
+      p <- pi/180*cbind(data$x,data$y)
+      p1 <- p[ks,,drop=FALSE]
+      p2 <- p[ks+1,,drop=FALSE]
+
+      d <- acos(sin(p1[,2])*sin(p2[,2])+cos(p1[,2])*cos(p2[,2])*cos(p1[,1]-p2[,1]))
+      A <- sin((1-f)*d)/sin(d)
+      B <- sin(f*d)/sin(d)
+      x <- A*cos(p1[,2])*cos(p1[,1])+B*cos(p2[,2])*cos(p2[,1])
+      y <- A*cos(p1[,2])*sin(p1[,1])+B*cos(p2[,2])*sin(p2[,1])
+      z <- A*sin(p1[,2])+B*sin(p2[,2])
+      cbind(x=(180/pi)*atan2(y, x),y=(180/pi)*atan2(z, sqrt(x^2+y^2)))
+    },
+    ## Replace the track with its centroid
+    mean=function(data,tms) {
+      cbind(x=rep_len(weighted.mean(data$x,1/data$x.se^2,na.rm=TRUE),length(tms)),
+            y=rep_len(weighted.mean(data$y,1/data$y.se^2,na.rm=TRUE),length(tms)))
+    })
+
+  ## Interpolate in each segment to generate initial mu
+  track$x <- double(nrow(track))
+  track$y <- double(nrow(track))
+  for(s in unique(track$segment))
+    track[track$segment==s,c("x","y")] <- interp(data[data$segment==s,],track$date[track$segment==s])
+  track
+}
+
+
+
+
+##' \code{crwControl} selects the numerical minimizer and associated
+##' control parameters used by \code{crw}.
+##'
+##' The numerical minimization function used to fit the model is
+##' selected by the \code{method} argument.  Additional control
+##' parameters specific to the chosen minimizer can be set though the
+##' dots argument.  See \code{\link{nlminb}} and \code{\link{optim}}
+##' for available options.
 ##'
 ##' @title Control Values for crw.
 ##' @param optim the numerical optimizer used in the fit
@@ -35,6 +168,7 @@ unwrapLon <- function(lon,lmin=-180)
 ##' @return Returns a list with components
 ##'   \item{\code{optim}}{the name of the numerical optimizer as a
 ##'   string, "nlminb" or "optim"}
+##'   \item{\code{verbose}}{should tracing information be reported}
 ##'   \item{\code{control}}{list of control parameters for the optimizer}
 ##' @seealso \code{\link{nlminb}}, \code{\link{optim}}.
 ##' @export
@@ -51,24 +185,15 @@ crwControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
 }
 
 
-##' Correlated Random Walk Filter
+##' Fit a continuous time correlated random walk to filter a track and
+##' predict locations for given time steps.
 ##'
-##' Fit a correlated random walk to filter a track and predict
-##' locations for given time steps.  The movement model is as
-##' described in Johnson et al. (2008), but without drift or haul out
-##' components, but assumes t distributed errors as described by
-##' Albertsen et al. (2015) if \code{tdf} is positive.
-##'
-##' The input track must be given as a dataframe where each row is an
-##' observed location, with columns
-##' \tabular{ll}{
-##' segment \tab track segment (integer, optional) \cr
-##' date \tab observation time (as GMT POSIXct) \cr
-##' x \tab observed x coordinate \cr
-##' y \tab observed y coordinate \cr
-##' x.se \tab standard error of the x coordinate (optional) \cr
-##' y.se \tab standard error of the y coordinate (optional) \cr
-##' }
+##' The filter fits a continuous time correlated random walk movement
+##' model similar to that described in Johnson et al. (2008) and
+##' implemented in the package \pkg{crawl}.  Unlike the crawl model,
+##' the model implemented here has no drift or haul out components,
+##' and assumes t distributed errors as described by Albertsen et
+##' al. (2015) if \code{tdf} is positive.
 ##'
 ##' The track may consist of several independent segments.  These may
 ##' represent either non-overlapping segments of a single track, or
@@ -77,17 +202,47 @@ crwControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
 ##' independent. It is assumed the input dataframe is ordered by
 ##' segment and by date within segment.
 ##'
+##' The input track to be filtered is supplied as a dataframe
+##' (\code{data}) where each row is an observed location, with columns
+##' \tabular{ll}{
+##' segment \tab track segment (integer, optional) \cr
+##' date \tab observation time (as GMT POSIXct) \cr
+##' x \tab observed x coordinate \cr
+##' y \tab observed y coordinate \cr
+##' x.se \tab standard error of the x coordinate (optional) \cr
+##' y.se \tab standard error of the y coordinate (optional) \cr
+##' }
 ##' The filtering model assumes the errors in the spatial coordinates
 ##' are have standard deviations 'x.se' and 'y.se' scaled by the
 ##' \eqn{\tau}{tau} model parameters. If these columns are missing,
 ##' they are assumed to be 1.
+##'
+##' The input track is filtered, and fitted locations are returned for
+##' the observed times in the input track and predictions are made for
+##' any additional times specified by the \code{track} or
+##' \code{predict} arguments.
+##'
+##' The \code{track} argument provides an initial estimate of the
+##' fitted track, and must be specified in the format returned by
+##' \code{interpolateTrack}.  When this argument is \code{NULL}, is is
+##' calculated as \code{interpolateTrack(data,predict)}.
+##'
+##' The \code{predict} argument specifies prediction times for which
+##' locations along the track will be predicted.  When the track
+##' consists of a single segment, these argument may be a vector of
+##' POSIXct times, otherwise it must be a dataframe with columns
+##' \tabular{ll}{
+##' segment \tab track segment (integer, optional) \cr
+##' date \tab prediction time (as GMT POSIXct)
+##' }
+##' If \code{track} is given, the prediction times are determined from
+##' the \code{track} argument and this argument is ignored.
 ##'
 ##' The arguments \code{betaPar}, \code{sigmaPar} and \code{tauPar}
 ##' control how the correlation parameters \eqn{\beta}{beta}, the
 ##' standard deviations of the innovations for the velocity process
 ##' \eqn{\sigma}{sigma} and the error scaling parameters
 ##' \eqn{\tau}{tau} apply to the x and y processes:
-##'
 ##' \tabular{ll}{
 ##' \code{"free"} \tab independent parameters are estimated for
 ##'     x and y \cr
@@ -99,40 +254,39 @@ crwControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
 ##' @title Correlated Random Walk Filter
 ##' @param data A dataframe representing the track (see details).
 ##' @param predict A vector of times (as POSIXct) or a dataframe of
-##'   segments and times for which to predict locations.
+##'   segments and times for which to predict locations.  Ignored if
+##'   \code{track} is provided.
+##' @param track Dataframe representing an initial estimate of the track (see details).
 ##' @param par Vector of initial parameter estimates.
 ##' @param betaPar Controls the autocorrelaion parameter for x and y
 ##'   processes.
 ##' @param sigmaPar Controls the standard deviation parameters for the
-##'   stochastic innovations of the velocity for the x and y processes.
+##'   stochastic innovations of the velocity for the x and y
+##'   processes.
 ##' @param tauPar Controls the scaling parameter for the observational
 ##'   errors for the x and y processes
 ##' @param tdf Degrees of freedom for the multivariate t error
 ##'   distribution.
-##' @param control List of control parameters (see \code{\link{crwControl}})
+##' @param control List of control parameters (see
+##'   \code{\link{crwControl}})
 ##' @return Returns a list with components
 ##'   \item{\code{summary}}{parameter summary table}
 ##'   \item{\code{par}}{vector of parameter estimates}
 ##'   \item{\code{track}}{dataframe of the fitted track}
 ##'   \item{\code{opt}}{the object returned by the optimizer}
-##'   \item{\code{tmb}}{the \pkg{TMB} object}
-##' The \code{track} dataframe has columns
-##'   \item{segment}{track segment}
-##'   \item{date}{time (as GMT POSIXct)}
-##'   \item{x}{x coordinate}
-##'   \item{y}{y coordinate}
-##'   \item{x.v}{x component of velocity}
-##'   \item{y.v}{y component of velocity}
-##'   \item{x.se}{standard error of x coordinate}
-##'   \item{y.se}{standard error of y coordinate}
+##'   \item{\code{tmb}}{the \pkg{TMB} object} The \code{track}
+##'   dataframe has columns \item{segment}{track segment}
+##'   \item{date}{time (as GMT POSIXct)} \item{x}{x coordinate}
+##'   \item{y}{y coordinate} \item{x.v}{x component of velocity}
+##'   \item{y.v}{y component of velocity} \item{x.se}{standard error
+##'   of x coordinate} \item{y.se}{standard error of y coordinate}
 ##'   \item{x.v.se}{standard error of x component of velocity}
 ##'   \item{y.v.se}{standard error of y component of velocity}
 ##'   \item{observed}{whether this was an observed time}
 ##'   \item{predicted}{whether this was a prediction time}
-##' @references
-##'     Johnson, D. S., London, J. M., Lea, M. A. and Durban, J. W. (2008).
-##'     Continuous-time correlated random walk model for animal telemetry data.
-##'     Ecology, 89(5), 1208-1215.
+##' @references Johnson, D. S., London, J. M., Lea, M. A. and Durban,
+##'   J. W. (2008).  Continuous-time correlated random walk model for
+##'   animal telemetry data.  Ecology, 89(5), 1208-1215.
 ##'
 ##'     Albertsen, C. M., Whoriskey, K., Yurkowski, D., Nielsen,
 ##'     A. and Flemming, J. M. (2015).  Fast fitting of non-Gaussian
@@ -148,6 +302,7 @@ crwControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
 ##' @export
 crw <- function(data,
                 predict=NULL,
+                track=NULL,
                 par=c(1,1,1,1,1,1),
                 betaPar=c("free","equal","fixed"),
                 sigmaPar=c("free","equal","fixed"),
@@ -171,54 +326,24 @@ crw <- function(data,
   if(is.unsorted(order(data$segment,data$date)))
     warning("Data should be ordered by segment and date within segment")
 
-  ## Convert prediction times to dataframe of dates and segments
-  if(is.null(predict)) predict <- data.frame(segment=numeric(0),date=numeric(0))
-  if(!is.data.frame(predict))
-    predict <- data.frame(
-      segment=round(approx(as.numeric(data$date),data$segment,as.numeric(predict),rule=2)$y),
-      date=predict)
-
-  ## Interleave times
-  tms <- unique(rbind(data[,c("segment","date")],predict[,c("segment","date")]))
-  tms <- tms[order(tms$segment,tms$date),]
-  tab <- paste(tms$segment,as.numeric(tms$date),sep="\r")
+  if(is.null(track)) track <- interpolateTrack(data,predict)
+  ## Determine indices of observed locations
+  tab <- paste(track$segment,as.numeric(track$date),sep="\r")
   obs <- match(paste(data$segment,as.numeric(data$date),sep="\r"),tab)
-  prd <- match(paste(predict$segment,as.numeric(predict$date),sep="\r"),tab)
-
-  ## Interpolate in each segment to generate initial mu
-  mu <- matrix(0,nrow(tms),2)
-  nu <- matrix(0,nrow(tms),2)
-  for(s in unique(tms$segment)) {
-    mu[tms$segment==s,1] <- approx(as.numeric(data$date[data$segment==s]),
-                                   data$x[data$segment==s],
-                                   as.numeric(tms$date[tms$segment==s]),rule=2)$y
-    mu[tms$segment==s,2] <- approx(as.numeric(data$date[data$segment==s]),
-                                   data$y[data$segment==s],
-                                   as.numeric(tms$date[tms$segment==s]))$y
-  }
 
   ## TMB data
   y <- cbind(data$x,data$y)
   w <- cbind(data$x.se,data$y.se)
-  dt <- diff(as.numeric(tms$date)/60)
-  seg <- tms$segment
+  dt <- diff(as.numeric(track$date)/60)
+  seg <- track$segment
   tmb.data <- list(y=y,w=w,dt=dt,obs=obs,seg=seg,tdf=tdf)
 
   ## TMB parameters
   beta <- par[1:2]
   sigma <- par[3:4]
   tau <- par[5:6]
-  mu <- matrix(0,nrow(tms),2)
-  nu <- matrix(0,nrow(tms),2)
-  ## Interpolate in each segment to generate initial mu
-  for(s in unique(tms$segment)) {
-    mu[tms$segment==s,1] <- approx(as.numeric(data$date[data$segment==s]),
-                                   data$x[data$segment==s],
-                                   as.numeric(tms$date[tms$segment==s]),rule=2)$y
-    mu[tms$segment==s,2] <- approx(as.numeric(data$date[data$segment==s]),
-                                   data$y[data$segment==s],
-                                   as.numeric(tms$date[tms$segment==s]),rule=2)$y
-  }
+  mu <- cbind(track$x,track$y)
+  nu <- matrix(0,nrow(track),2)
   tmb.pars <- list(logBeta=log(beta),logSigma=log(sigma),logTau=log(tau),mu=mu,nu=nu)
 
   ## TMB - create objective function
@@ -235,20 +360,12 @@ crw <- function(data,
   sdrep <- sdreport(obj)
   fxd <- summary.sdreport(sdrep,"report")
   rdm <- summary.sdreport(sdrep,"random")
-  track <- data.frame(
-    segment=tms$segment,
-    date=tms$date,
-    mu=matrix(rdm[rownames(rdm)=="mu",1],ncol=2),
-    nu=matrix(rdm[rownames(rdm)=="nu",1],ncol=2),
-    mu.se=matrix(rdm[rownames(rdm)=="mu",2],ncol=2),
-    nu.se=matrix(rdm[rownames(rdm)=="nu",2],ncol=2),
-    observed=seq_len(nrow(mu)) %in% obs,
-    predicted=seq_len(nrow(mu)) %in% prd)
-  colnames(track) <- c("segment","date",
-                       "x","y","x.v","y.v",
-                       "x.se","y.se","x.v.se","y.v.se",
-                       "observed",
-                       "predicted")
+  mu <- matrix(rdm[rownames(rdm)=="mu",],ncol=4)
+  nu <- matrix(rdm[rownames(rdm)=="nu",],ncol=4)
+  track <- cbind.data.frame(
+    track[,c("segment","date","observed","predicted")],
+    x=mu[,1],y=mu[,2],x.v=nu[,1],y.v=nu[,2],
+    x.se=mu[,3],y.se=mu[,4],x.v.se=nu[,3],y.v.se=nu[,4])
 
   structure(list(summary=fxd,par=fxd[,1],track=track,data=data,opt=opt,obj=obj),
             class="RWalc")
@@ -284,11 +401,11 @@ crw <- function(data,
 ##' @export
 ##'
 predict.RWalc <- function(object,vel=FALSE,se=FALSE,...) {
-  if(vel)
-    cols <- if(se) 1:10 else 1:6
-  else
-    cols <- if(se) c(1:4,7:8) else 1:4
-  object$track[object$track$predicted,cols]
+  object$track[object$track$predicted,
+               c("segment","date","x","y",
+                 if(vel) c("x.v","y.v"),
+                 if(se) c("x.se","y.se"),
+                 if(vel && se) c("x.v.se","y.v.se"))]
 }
 
 
@@ -321,11 +438,11 @@ predict.RWalc <- function(object,vel=FALSE,se=FALSE,...) {
 ##' Otherwise only the appropriate subset of columns are returned.
 ##' @export
 fitted.RWalc <- function(object,vel=FALSE,se=FALSE,...) {
-  if(vel)
-    cols <- if(se) 1:10 else 1:6
-  else
-    cols <- if(se) c(1:4,7:8) else 1:4
-  object$track[object$track$observed,cols]
+  object$track[object$track$observed,
+               c("segment","date","x","y",
+                 if(vel) c("x.v","y.v"),
+                 if(se) c("x.se","y.se"),
+                 if(vel && se) c("x.v.se","y.v.se"))]
 }
 
 
@@ -632,9 +749,6 @@ crwSimulate <- function(data,par,fixed=NULL,
 
 
 
-
-
-
 ##' Resample a Track by Linear Interpolation
 ##'
 ##' Linearly interpolate in the spatial coordinates to resample a
@@ -649,7 +763,7 @@ crwSimulate <- function(data,par,fixed=NULL,
 ##' y \tab observed y coordinate \cr
 ##' }
 ##'
-##' @title Interpolate Track
+##' @title Regularize Track
 ##' @param data A dataframe representing a track
 ##' @param tstep the time step to resample to (in seconds)
 ##' @return a dataframe with columns
@@ -658,7 +772,7 @@ crwSimulate <- function(data,par,fixed=NULL,
 ##'   \item{\code{y}}{interpolated y coordinate}
 ##' @importFrom stats approx
 ##' @export
-interpolateTrack <- function(data,tstep=60*60) {
+regularizeTrack <- function(data,tstep=60*60) {
 
   interp <- function(s) {
     d <- data[data$segment==s,]
