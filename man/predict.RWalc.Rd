@@ -4,18 +4,22 @@
 \alias{predict.RWalc}
 \title{Extract Fitted Track}
 \usage{
-\method{predict}{RWalc}(object, all = FALSE, ...)
+\method{predict}{RWalc}(object, vel = FALSE, se = FALSE, ...)
 }
 \arguments{
 \item{object}{A fitted object from \code{crw}.}
 
-\item{all}{If \code{FALSE} return just the date and spatial coordinates.}
+\item{vel}{Logical indicating whether estimated velocities should
+be returned.}
+
+\item{se}{Logical indicating whether estimated standard errors
+should be returned.}
 
 \item{...}{Ignored.}
 }
 \value{
-If \code{all=TRUE} return a dataframe of predicted track
-  locations with columns
+If \code{vel} and \code{se} are true, return a dataframe
+  of predicted track locations with columns
   \item{segment}{track segment}
   \item{date}{time (as GMT POSIXct)}
   \item{x}{x coordinate}
@@ -26,7 +30,7 @@ If \code{all=TRUE} return a dataframe of predicted track
   \item{y.se}{standard error of y coordinate}
   \item{x.v.se}{standard error of x component of velocity}
   \item{y.v.se}{standard error of x component of velocity}
-Otherwise only the first four columns are returned
+Otherwise only the appropriate subset of columns are returned
 }
 \description{
 Extract Predicted Track
