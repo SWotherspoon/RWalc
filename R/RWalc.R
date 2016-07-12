@@ -267,6 +267,7 @@ crwControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
 ##'   errors for the x and y processes
 ##' @param tdf Degrees of freedom for the multivariate t error
 ##'   distribution.
+##' @param bshrink Shrinkage penalty for the correlation parameter.
 ##' @param control List of control parameters (see
 ##'   \code{\link{crwControl}})
 ##' @return Returns a list with components
@@ -307,7 +308,10 @@ crw <- function(data,
                 betaPar=c("free","equal","fixed"),
                 sigmaPar=c("free","equal","fixed"),
                 tauPar=c("free","equal","fixed"),
-                tdf=-1,control = crwControl()) {
+                tdf=-1,bshrink=0,
+                control=crwControl()) {
+
+  cl <- match.call()
 
   ## Set parameter constraints
   betaPar <- match.arg(betaPar)
@@ -336,7 +340,8 @@ crw <- function(data,
   w <- cbind(data$x.se,data$y.se)
   dt <- diff(as.numeric(track$date)/60)
   seg <- track$segment
-  tmb.data <- list(y=y,w=w,dt=dt,obs=obs,seg=seg,tdf=tdf)
+  bshrink <- pmax(0,rep_len(bshrink,2))
+  tmb.data <- list(y=y,w=w,dt=dt,obs=obs,seg=seg,tdf=tdf,bshrink=bshrink)
 
   ## TMB parameters
   beta <- par[1:2]
@@ -367,7 +372,7 @@ crw <- function(data,
     x=mu[,1],y=mu[,2],x.v=nu[,1],y.v=nu[,2],
     x.se=mu[,3],y.se=mu[,4],x.v.se=nu[,3],y.v.se=nu[,4])
 
-  structure(list(summary=fxd,par=fxd[,1],track=track,data=data,opt=opt,obj=obj),
+  structure(list(call=cl,summary=fxd,par=fxd[,1],track=track,data=data,opt=opt,obj=obj),
             class="RWalc")
 }
 

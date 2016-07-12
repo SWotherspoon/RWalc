@@ -74,7 +74,7 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(obs);            // Indices of the observed states
   DATA_IVECTOR(seg);            // Indices of the observed states
   DATA_SCALAR(tdf);             // Degrees of freedom of the t distribution
-
+  DATA_VECTOR(bshrink);         // Shrinkage penalty for beta
   PARAMETER_VECTOR(logBeta);
   PARAMETER_VECTOR(logSigma);
   PARAMETER_VECTOR(logTau);
@@ -133,6 +133,8 @@ Type objective_function<Type>::operator() ()
     epsilon(1) = (y(i,1)-mu(k,1))/w(i,1);
     nll += nll_dist(epsilon);
   }
+
+  nll += bshrink(0)*beta(0)+bshrink(1)*beta(1);
 
   ADREPORT(beta)
   ADREPORT(sigma)

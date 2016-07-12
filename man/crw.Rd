@@ -6,7 +6,7 @@
 \usage{
 crw(data, predict = NULL, track = NULL, par = c(1, 1, 1, 1, 1, 1),
   betaPar = c("free", "equal", "fixed"), sigmaPar = c("free", "equal",
-  "fixed"), tauPar = c("free", "equal", "fixed"), tdf = -1,
+  "fixed"), tauPar = c("free", "equal", "fixed"), tdf = -1, bshrink = 0,
   control = crwControl())
 }
 \arguments{
@@ -32,6 +32,8 @@ errors for the x and y processes}
 
 \item{tdf}{Degrees of freedom for the multivariate t error
 distribution.}
+
+\item{bshrink}{Shrinkage penalty for the correlation parameter.}
 
 \item{control}{List of control parameters (see
 \code{\link{crwControl}})}
