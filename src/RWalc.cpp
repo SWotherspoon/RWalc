@@ -134,7 +134,7 @@ Type objective_function<Type>::operator() ()
     nll += nll_dist(epsilon);
   }
 
-  nll += bshrink(0)*beta(0)+bshrink(1)*beta(1);
+  nll += bshrink(0)*beta(0)*beta(0)+bshrink(1)*beta(1)*beta(1);
 
   ADREPORT(beta)
   ADREPORT(sigma)
