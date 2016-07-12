@@ -3,7 +3,7 @@
 \name{wrapLon}
 \alias{unwrapLon}
 \alias{wrapLon}
-\title{Dateline adjustment}
+\title{Wrapping Locations Around the Dateline.}
 \usage{
 wrapLon(lon, lmin = -180)
 
@@ -18,12 +18,10 @@ unwrapLon(lon, lmin = -180)
 a vector of longitudes
 }
 \description{
-Wrapping Locations Around the Dateline
-}
-\details{
 These functions wrap and unwrap a sequence of longitudes around
 the dateline.
-
+}
+\details{
 The \code{wrapLon} function wraps the longitudes back into the
 interval [lmin,lmin+360).  The \code{unwrapLon} function unwraps a
 sequence of longitudes so the the initial point lies in

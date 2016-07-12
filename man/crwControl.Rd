@@ -17,14 +17,19 @@ crwControl(optim = c("nlminb", "optim"), verbose = FALSE, ...)
 Returns a list with components
   \item{\code{optim}}{the name of the numerical optimizer as a
   string, "nlminb" or "optim"}
+  \item{\code{verbose}}{should tracing information be reported}
   \item{\code{control}}{list of control parameters for the optimizer}
 }
 \description{
-Set Control Values for \code{crw}.
+\code{crwControl} selects the numerical minimizer and associated
+control parameters used by \code{crw}.
 }
 \details{
-Choose the numerical minimmization function used to fit the model,
-and set the associated control parameters.
+The numerical minimization function used to fit the model is
+selected by the \code{method} argument.  Additional control
+parameters specific to the chosen minimizer can be set though the
+dots argument.  See \code{\link{nlminb}} and \code{\link{optim}}
+for available options.
 }
 \seealso{
 \code{\link{nlminb}}, \code{\link{optim}}.
