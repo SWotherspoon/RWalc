@@ -308,7 +308,7 @@ crw <- function(data,
                 betaPar=c("free","equal","fixed"),
                 sigmaPar=c("free","equal","fixed"),
                 tauPar=c("free","equal","fixed"),
-                tdf=-1,bshrink=0,
+                tdf=-1,bshrink=1.0E-6,
                 control=crwControl()) {
 
   cl <- match.call()
