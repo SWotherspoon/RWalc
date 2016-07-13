@@ -285,18 +285,20 @@ crwControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
 ##'   \item{y.v.se}{standard error of y component of velocity}
 ##'   \item{observed}{whether this was an observed time}
 ##'   \item{predicted}{whether this was a prediction time}
-##' @references Johnson, D. S., London, J. M., Lea, M. A. and Durban,
+##' @references
+##'   Johnson, D. S., London, J. M., Lea, M. A. and Durban,
 ##'   J. W. (2008).  Continuous-time correlated random walk model for
 ##'   animal telemetry data.  Ecology, 89(5), 1208-1215.
 ##'
-##'     Albertsen, C. M., Whoriskey, K., Yurkowski, D., Nielsen,
-##'     A. and Flemming, J. M. (2015).  Fast fitting of non-Gaussian
-##'     state-space models to animal movement data via Template Model
-##'     Builder.  Ecology, 96(10), 2598-2604.
+##'   Albertsen, C. M., Whoriskey, K., Yurkowski, D., Nielsen, A. and
+##'   Flemming, J. M. (2015).  Fast fitting of non-Gaussian
+##'   state-space models to animal movement data via Template Model
+##'   Builder.  Ecology, 96(10), 2598-2604.
 ##'
-##'     Lange, K. L., Little, R. J., & Taylor, J. M. (1989). Robust
-##'     statistical modeling using the t distribution. Journal of the
-##'     American Statistical Association, 84(408), 881-896.
+##'   Lange, K. L., Little, R. J., & Taylor, J. M. (1989). Robust
+##'   statistical modeling using the t distribution. Journal of the
+##'   American Statistical Association, 84(408), 881-896.
+##'
 ##' @useDynLib RWalc
 ##' @importFrom TMB MakeADFun sdreport summary.sdreport
 ##' @importFrom stats nlminb optim

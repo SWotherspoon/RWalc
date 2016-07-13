@@ -6,8 +6,8 @@
 \usage{
 crw(data, predict = NULL, track = NULL, par = c(1, 1, 1, 1, 1, 1),
   betaPar = c("free", "equal", "fixed"), sigmaPar = c("free", "equal",
-  "fixed"), tauPar = c("free", "equal", "fixed"), tdf = -1, bshrink = 0,
-  control = crwControl())
+  "fixed"), tauPar = c("free", "equal", "fixed"), tdf = -1,
+  bshrink = 1e-06, control = crwControl())
 }
 \arguments{
 \item{data}{A dataframe representing the track (see details).}
@@ -128,13 +128,13 @@ Johnson, D. S., London, J. M., Lea, M. A. and Durban,
   J. W. (2008).  Continuous-time correlated random walk model for
   animal telemetry data.  Ecology, 89(5), 1208-1215.
 
-    Albertsen, C. M., Whoriskey, K., Yurkowski, D., Nielsen,
-    A. and Flemming, J. M. (2015).  Fast fitting of non-Gaussian
-    state-space models to animal movement data via Template Model
-    Builder.  Ecology, 96(10), 2598-2604.
+  Albertsen, C. M., Whoriskey, K., Yurkowski, D., Nielsen, A. and
+  Flemming, J. M. (2015).  Fast fitting of non-Gaussian
+  state-space models to animal movement data via Template Model
+  Builder.  Ecology, 96(10), 2598-2604.
 
-    Lange, K. L., Little, R. J., & Taylor, J. M. (1989). Robust
-    statistical modeling using the t distribution. Journal of the
-    American Statistical Association, 84(408), 881-896.
+  Lange, K. L., Little, R. J., & Taylor, J. M. (1989). Robust
+  statistical modeling using the t distribution. Journal of the
+  American Statistical Association, 84(408), 881-896.
 }
 
