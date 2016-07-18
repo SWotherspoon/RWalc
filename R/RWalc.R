@@ -106,6 +106,7 @@ interpolateTrack <- function(data,predict=NULL,
   ## Interleave times
   track <- unique(rbind(data[,c("segment","date")],predict[,c("segment","date")]))
   track <- track[order(track$segment,track$date),]
+  rownames(track) <- NULL
 
   ## Which locations are observed and which predicted
   tab <- paste(track$segment,as.numeric(track$date),sep="\r")
@@ -141,8 +142,8 @@ interpolateTrack <- function(data,predict=NULL,
       p2 <- p[ks+1,,drop=FALSE]
 
       d <- acos(sin(p1[,2])*sin(p2[,2])+cos(p1[,2])*cos(p2[,2])*cos(p1[,1]-p2[,1]))
-      A <- sin((1-f)*d)/sin(d)
-      B <- sin(f*d)/sin(d)
+      A <- ifelse(abs(d) < 1.0E-14,1-f,sin((1-f)*d)/sin(d))
+      B <- ifelse(abs(d) < 1.0E-14,f,sin(f*d)/sin(d))
       x <- A*cos(p1[,2])*cos(p1[,1])+B*cos(p2[,2])*cos(p2[,1])
       y <- A*cos(p1[,2])*sin(p1[,1])+B*cos(p2[,2])*sin(p2[,1])
       z <- A*sin(p1[,2])+B*sin(p2[,2])
