@@ -21,7 +21,7 @@
 ##' @return A function of three arguments (tm,lon,lat) that returns
 ##'   a logical indicating whether (lon,lat) is at sea or on land
 ##'   and inside the allowable latitude range.
-##' @seealso \code{\link{crw}}
+##' @seealso \code{\link{rwalc}}
 ##' @references Wessel, P., and W. H. F. Smith, A Global
 ##'   Self-consistent, Hierarchical, High-resolution Shoreline Database,
 ##'   J. Geophys. Res., 101, #B4, pp. 8741-8743, 1996.

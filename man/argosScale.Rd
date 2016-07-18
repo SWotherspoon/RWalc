@@ -17,13 +17,11 @@ The input dataframe with the appended columns
 \item{\code{y.se}}{error scaling factor for latitude}
 }
 \description{
-ARGOS Error Scale Factors for Location Classes
-}
-\details{
 Create a dataframe of the multiplicative scaling factors for
 scaling location accuracy from the reported Argos location class.
 These are the as used in \pkg{crawl}.
-
+}
+\details{
 This function requires that the "x" coordinate represents
 longitude and the "y" coordinate represents latitude.
 }
