@@ -32,7 +32,7 @@ time points by one of several methods.
 }
 \details{
 The track may consist of several independent segments.  These may
-represent either non-overlapping segments of a single track, or
+represent either distinct segments of a single track, or
 distinct tracks that may overlap in time.
 
 The input track must be given as a dataframe where each row is an
@@ -48,6 +48,21 @@ observed location, with columns
 It is assumed the input dataframe is ordered by segment and by
 date within segment.
 
+The \code{predict} argument specifies prediction times for which
+locations along the track will be predicted.  When the track
+consists of a single segment, these argument may be a vector of
+POSIXct times, otherwise it must be a dataframe with columns
+
+\tabular{ll}{
+segment \tab track segment (integer, optional) \cr
+date \tab prediction time (as GMT POSIXct)
+}
+
+The fitted track is returned as a dataframe containing both the
+original and predicted locations.  To obtain just the predicted
+locations, the dataframe should be subset by the \code{predicted}
+column.
+
 Several interpolation/smoothing methods are available
 \describe{
 \item{"approx"}{linear interpolation in x and y}
@@ -56,8 +71,5 @@ Several interpolation/smoothing methods are available
 interpolates along a great circle}
 \item{"mean"}{the track is replaced by its weighted centroid}
 }
-
-The interpolated track is returned as a dataframe containing both
-the interpolated and original locations.
 }
 
