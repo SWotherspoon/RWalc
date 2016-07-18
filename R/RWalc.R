@@ -25,7 +25,7 @@ unwrapLon <- function(lon,lmin=-180)
 ##' time points by one of several methods.
 ##'
 ##' The track may consist of several independent segments.  These may
-##' represent either non-overlapping segments of a single track, or
+##' represent either distinct segments of a single track, or
 ##' distinct tracks that may overlap in time.
 ##'
 ##' The input track must be given as a dataframe where each row is an
@@ -41,6 +41,21 @@ unwrapLon <- function(lon,lmin=-180)
 ##' It is assumed the input dataframe is ordered by segment and by
 ##' date within segment.
 ##'
+##' The \code{predict} argument specifies prediction times for which
+##' locations along the track will be predicted.  When the track
+##' consists of a single segment, these argument may be a vector of
+##' POSIXct times, otherwise it must be a dataframe with columns
+##'
+##' \tabular{ll}{
+##' segment \tab track segment (integer, optional) \cr
+##' date \tab prediction time (as GMT POSIXct)
+##' }
+##'
+##' The fitted track is returned as a dataframe containing both the
+##' original and predicted locations.  To obtain just the predicted
+##' locations, the dataframe should be subset by the \code{predicted}
+##' column.
+##'
 ##' Several interpolation/smoothing methods are available
 ##' \describe{
 ##' \item{"approx"}{linear interpolation in x and y}
@@ -50,8 +65,6 @@ unwrapLon <- function(lon,lmin=-180)
 ##' \item{"mean"}{the track is replaced by its weighted centroid}
 ##' }
 ##'
-##' The interpolated track is returned as a dataframe containing both
-##' the interpolated and original locations.
 ##'
 ##' @title Track Interpolation
 ##' @param data A dataframe representing the track (see details).
@@ -152,8 +165,8 @@ interpolateTrack <- function(data,predict=NULL,
 
 
 
-##' \code{crwControl} selects the numerical minimizer and associated
-##' control parameters used by \code{crw}.
+##' \code{rwalcControl} selects the numerical minimizer and associated
+##' control parameters used by \code{rwalc}.
 ##'
 ##' The numerical minimization function used to fit the model is
 ##' selected by the \code{method} argument.  Additional control
@@ -161,7 +174,7 @@ interpolateTrack <- function(data,predict=NULL,
 ##' dots argument.  See \code{\link{nlminb}} and \code{\link{optim}}
 ##' for available options.
 ##'
-##' @title Control Values for crw.
+##' @title Control Values for \code{rwalc}.
 ##' @param optim the numerical optimizer used in the fit
 ##' @param verbose Enable tracing information.
 ##' @param ... control parameters for the chosen optimizer
@@ -172,7 +185,7 @@ interpolateTrack <- function(data,predict=NULL,
 ##'   \item{\code{control}}{list of control parameters for the optimizer}
 ##' @seealso \code{\link{nlminb}}, \code{\link{optim}}.
 ##' @export
-crwControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
+rwalcControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
   optim <- match.arg(optim)
   dots <- list(...)
   ## Set default control values
@@ -195,12 +208,12 @@ crwControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
 ##' and assumes t distributed errors as described by Albertsen et
 ##' al. (2015) if \code{tdf} is positive.
 ##'
-##' The track may consist of several independent segments.  These may
-##' represent either non-overlapping segments of a single track, or
-##' distinct tracks that may overlap in time.  The fitted random walk
-##' is correlated within a segment, but segments are assumed
-##' independent. It is assumed the input dataframe is ordered by
-##' segment and by date within segment.
+##' The input track may consist of several independent segments.
+##' These may represent either non-overlapping segments of a single
+##' track, or distinct tracks that may overlap in time.  The fitted
+##' random walk is correlated within a segment, but segments are
+##' assumed independent. It is assumed the input dataframe is ordered
+##' by segment and by date within segment.
 ##'
 ##' The input track to be filtered is supplied as a dataframe
 ##' (\code{data}) where each row is an observed location, with columns
@@ -217,26 +230,25 @@ crwControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
 ##' \eqn{\tau}{tau} model parameters. If these columns are missing,
 ##' they are assumed to be 1.
 ##'
-##' The input track is filtered, and fitted locations are returned for
-##' the observed times in the input track and predictions are made for
-##' any additional times specified by the \code{track} or
-##' \code{predict} arguments.
-##'
-##' The \code{track} argument provides an initial estimate of the
-##' fitted track, and must be specified in the format returned by
-##' \code{interpolateTrack}.  When this argument is \code{NULL}, is is
-##' calculated as \code{interpolateTrack(data,predict)}.
+##' An estimate of the track is required to initialize the fitting
+##' process.  This can be supplied by the user through the
+##' \code{track} argument as a dataframe with the same format returned
+##' by \code{\link{interpolateTrack}}.  When this argument is
+##' \code{NULL}, the initial track is generated with
+##' \code{interpolateTrack} from the \code{data} and \code{predict}
+##' arguments.
 ##'
 ##' The \code{predict} argument specifies prediction times for which
-##' locations along the track will be predicted.  When the track
-##' consists of a single segment, these argument may be a vector of
-##' POSIXct times, otherwise it must be a dataframe with columns
+##' locations along the track will be predicted when no initial track
+##' is given.  When the track consists of a single segment, these
+##' argument may be a vector of POSIXct times, otherwise it must be a
+##' dataframe with columns
 ##' \tabular{ll}{
 ##' segment \tab track segment (integer, optional) \cr
 ##' date \tab prediction time (as GMT POSIXct)
 ##' }
-##' If \code{track} is given, the prediction times are determined from
-##' the \code{track} argument and this argument is ignored.
+##' If an initial track is given, the prediction times are determined
+##' from that.
 ##'
 ##' The arguments \code{betaPar}, \code{sigmaPar} and \code{tauPar}
 ##' control how the correlation parameters \eqn{\beta}{beta}, the
@@ -269,7 +281,7 @@ crwControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
 ##'   distribution.
 ##' @param bshrink Shrinkage penalty for the correlation parameter.
 ##' @param control List of control parameters (see
-##'   \code{\link{crwControl}})
+##'   \code{\link{rwalcControl}})
 ##' @return Returns a list with components
 ##'   \item{\code{summary}}{parameter summary table}
 ##'   \item{\code{par}}{vector of parameter estimates}
@@ -303,7 +315,7 @@ crwControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
 ##' @importFrom TMB MakeADFun sdreport summary.sdreport
 ##' @importFrom stats nlminb optim
 ##' @export
-crw <- function(data,
+rwalc <- function(data,
                 predict=NULL,
                 track=NULL,
                 par=c(1,1,1,1,1,1),
@@ -311,7 +323,7 @@ crw <- function(data,
                 sigmaPar=c("free","equal","fixed"),
                 tauPar=c("free","equal","fixed"),
                 tdf=-1,bshrink=1.0E-6,
-                control=crwControl()) {
+                control=rwalcControl()) {
 
   cl <- match.call()
 
@@ -375,18 +387,16 @@ crw <- function(data,
     x.se=mu[,3],y.se=mu[,4],x.v.se=nu[,3],y.v.se=nu[,4])
 
   structure(list(call=cl,summary=fxd,par=fxd[,1],track=track,data=data,opt=opt,obj=obj),
-            class="RWalc")
+            class="rwalc")
 }
 
 
 
-##' Extract Predicted Track
-##'
 ##' This is a convenience function that subsets the fitted track to
 ##' return only those locations that correspond to predictions.
 ##'
-##' @title Extract Fitted Track
-##' @param object A fitted object from \code{crw}.
+##' @title Extract Predicted RWalc Track
+##' @param object A fitted object from \code{rwalc}.
 ##' @param vel Logical indicating whether estimated velocities should
 ##'   be returned.
 ##' @param se Logical indicating whether estimated standard errors
@@ -407,7 +417,7 @@ crw <- function(data,
 ##' Otherwise only the appropriate subset of columns are returned
 ##' @export
 ##'
-predict.RWalc <- function(object,vel=FALSE,se=FALSE,...) {
+predict.rwalc <- function(object,vel=FALSE,se=FALSE,...) {
   object$track[object$track$predicted,
                c("segment","date","x","y",
                  if(vel) c("x.v","y.v"),
@@ -417,14 +427,12 @@ predict.RWalc <- function(object,vel=FALSE,se=FALSE,...) {
 
 
 
-##' Extract Fitted Track
-##'
 ##' This is a convenience function that subsets the fitted track to
 ##' return only those locations that correspond to the original
 ##' observations.
 ##'
-##' @title Extract Fitted Track
-##' @param object A fitted object from \code{crw}.
+##' @title Extract Fitted RWalc Track
+##' @param object A fitted object from \code{rwalc}.
 ##' @param vel Logical indicating whether estimated velocities
 ##'   should be returned.
 ##' @param se Logical indicating whether estimated standard errors
@@ -444,7 +452,7 @@ predict.RWalc <- function(object,vel=FALSE,se=FALSE,...) {
 ##'   \item{y.v.se}{standard error of x component of velocity}
 ##' Otherwise only the appropriate subset of columns are returned.
 ##' @export
-fitted.RWalc <- function(object,vel=FALSE,se=FALSE,...) {
+fitted.rwalc <- function(object,vel=FALSE,se=FALSE,...) {
   object$track[object$track$observed,
                c("segment","date","x","y",
                  if(vel) c("x.v","y.v"),
@@ -454,17 +462,17 @@ fitted.RWalc <- function(object,vel=FALSE,se=FALSE,...) {
 
 
 
-##' Plot a Fitted RWalc Track
+##' Display the fitted track and observed locations from a fitted RWalc track.
 ##'
-##' Display the fitted track and observed locations.  Each plots
-##' displays the fitted track (blue) and an approximate 95% confidence
-##' interval (grey) together with the observed locations (red).  The
-##' first two plots display the coordinate profiles of the track over
-##' time, while the third plot shows the track.  A subset of the plots
-##' to display can be selected with the \code{which} argument.
+##' Each plot displays the fitted track (blue) and an approximate 95%
+##' confidence interval (grey) together with the observed locations
+##' (red).  The first two plots display the coordinate profiles of the
+##' track over time, while the third plot shows the track.  A subset
+##' of the plots to display can be selected with the \code{which}
+##' argument.
 ##'
 ##' @title Plot a Fitted RWalc Track
-##' @param x A fitted object from \code{crw}..
+##' @param x A fitted object from \code{rwalc}..
 ##' @param which Select the plots to display (see details).
 ##' @param segment Select the segments to display (\code{NULL} displays all)
 ##' @param ask if \code{TRUE}, user is asked before each plot is displayed.
@@ -472,9 +480,9 @@ fitted.RWalc <- function(object,vel=FALSE,se=FALSE,...) {
 ##' @importFrom grDevices dev.interactive devAskNewPage
 ##' @importFrom graphics par plot lines points polygon segments
 ##' @export
-plot.RWalc <- function(x,which=1:2,segment=NULL,
-                       ask = prod(par("mfcol")) < length(which) && dev.interactive(),
-                       ...) {
+plot.rwalc <- function(x,which=1:2,segment=NULL,
+                     ask = prod(par("mfcol")) < length(which) && dev.interactive(),
+                     ...) {
 
   plot.profile <- function(date,seg,y,se,lab,date0,y0) {
     se[!is.finite(se)] <- 0
@@ -524,8 +532,6 @@ plot.RWalc <- function(x,which=1:2,segment=NULL,
 }
 
 
-##' ARGOS Error Scale Factors for Location Classes
-##'
 ##' Create a dataframe of the multiplicative scaling factors for
 ##' scaling location accuracy from the reported Argos location class.
 ##' These are the as used in \pkg{crawl}.
@@ -551,14 +557,13 @@ argosScale <- function(data,class) {
 
 
 
-##' State model matrices for the Continuous Time Random Walk Model
-##'
+
 ##' Constructs the transition matrix \code{A} and innovation
 ##' covariance matrix \code{Q} for the continuous time random walk
 ##' model corresponding to parameters \code{beta}, \code{sigma} and
 ##' time step \code{dt}.
 ##'
-##' @title State model matrices
+##' @title State Model Matrices for an RWalc Model
 ##' @param beta Parameter vector of length 2.
 ##' @param sigma Parameter vector of length 2.
 ##' @param dt Time step.
@@ -566,7 +571,7 @@ argosScale <- function(data,class) {
 ##'   \item{\code{A}}{transition matrix}
 ##'   \item{\code{Q}}{innovation covariance matrix}
 ##' @export
-system.matrices <- function(beta,sigma,dt) {
+systemMatrices <- function(beta,sigma,dt) {
   A <- matrix(0,4,4)
   Q <- matrix(0,4,4)
   s <- sigma^2/beta
@@ -591,9 +596,8 @@ system.matrices <- function(beta,sigma,dt) {
 }
 
 
-##' Generate new tracks from a CRW model
-##'
-##' Given a a template track and the parameters of a crw model this
+
+##' Given a a template track and the parameters of a rwalc model this
 ##' function generates a new track of the same length that coincides
 ##' with the fitted track at the start point and optionally other
 ##' specified points along the template track.
@@ -632,7 +636,7 @@ system.matrices <- function(beta,sigma,dt) {
 ##' there is nothing prevent the track extending outside the [-90,90]
 ##' latitudinal limits.
 ##'
-##' @title Regressive bridge sampler
+##' @title RWalc track sampler
 ##' @param data A dataframe representing the template track.
 ##' @param par The model parameters.
 ##' @param fixed An integer vector indicating which locations in the
@@ -655,7 +659,7 @@ system.matrices <- function(beta,sigma,dt) {
 ##'   \item{y.v}{y component of velocity}
 ##' @importFrom stats rnorm
 ##' @export
-crwSimulate <- function(data,par,fixed=NULL,
+rwalcSimulate <- function(data,par,fixed=NULL,
                         fixed.err=diag(1.0E-6,4,4),
                         point.check=function(tm,x,y) TRUE,
                         point.accept=NULL) {
@@ -678,7 +682,7 @@ crwSimulate <- function(data,par,fixed=NULL,
   As <- vector("list",length(dt))
   Qs <- vector("list",length(dt))
   for(u in unique(dt)) {
-    AQ <- system.matrices(beta,sigma,u)
+    AQ <- systemMatrices(beta,sigma,u)
     k <- which(dt==u)
     As[k] <- AQ[1]
     Qs[k] <- AQ[2]
@@ -752,48 +756,6 @@ crwSimulate <- function(data,par,fixed=NULL,
     }
   }
   NULL
-}
-
-
-
-##' Resample a Track by Linear Interpolation
-##'
-##' Linearly interpolate in the spatial coordinates to resample a
-##' track back to a regular time step.
-##'
-##' The input track must be given as a dataframe where each row is an
-##' observed location, with columns
-##' \tabular{ll}{
-##' segment \tab track segment \cr
-##' date \tab observation time (as GMT POSIXct) \cr
-##' x \tab observed x coordinate \cr
-##' y \tab observed y coordinate \cr
-##' }
-##'
-##' @title Regularize Track
-##' @param data A dataframe representing a track
-##' @param tstep the time step to resample to (in seconds)
-##' @return a dataframe with columns
-##'   \item{\code{date}}{observation time (as POSIXct)}
-##'   \item{\code{x}}{interpolated x coordinate}
-##'   \item{\code{y}}{interpolated y coordinate}
-##' @importFrom stats approx
-##' @export
-regularizeTrack <- function(data,tstep=60*60) {
-
-  interp <- function(s) {
-    d <- data[data$segment==s,]
-    ts <- seq(min(d$date),max(d$date),tstep)
-    data.frame(segment=s,
-               date=ts,
-               x=approx(as.numeric(d$date),d$x,as.numeric(ts))$y,
-               y=approx(as.numeric(d$date),d$y,as.numeric(ts))$y)
-  }
-
-  if(!is.null(data))
-    do.call(rbind,
-            c(lapply(sort(unique(data$segment)),interp),
-              make.row.names=FALSE))
 }
 
 

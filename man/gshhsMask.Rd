@@ -48,6 +48,6 @@ Wessel, P., and W. H. F. Smith, A Global
   \url{https://www.ngdc.noaa.gov/mgg/shorelines/gshhs.html}
 }
 \seealso{
-\code{\link{crw}}
+\code{\link{rwalc}}
 }
 
