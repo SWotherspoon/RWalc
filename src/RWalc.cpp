@@ -112,14 +112,14 @@ Type objective_function<Type>::operator() ()
       eta(2) = mu(i+1,1)-(mu(i,1)+nu(i,1)*(1.0-exp(-beta(1)*dt(i)))/beta(1));
       eta(3) = nu(i+1,1)-nu(i,1)*exp(-beta(1)*dt(i));
 
-      Q(0,0) = sigma2(0)*(dt(i)-2.0*(1.0-exp(-beta(0)*dt(i)))/beta(0)+(1.0-exp(-2.0*beta(0)*dt(i)))/(2.0*beta(0)))/pow(beta(0),2.0);
-      Q(1,1) = sigma2(0)*(1.0-exp(-2.0*beta(0)*dt(i)))/(2.0*beta(0));
-      Q(1,0) = sigma2(0)*(1.0-2.0*exp(-beta(0)*dt(i))+exp(-2.0*beta(0)*dt(i)))/(2.0*pow(beta(0),2.0));
+      Q(0,0) = sigma2(0)*(dt(i)-2.0*(1.0-exp(-beta(0)*dt(i)))/beta(0)+(1.0-exp(-2.0*beta(0)*dt(i)))/(2.0*beta(0)));
+      Q(1,1) = sigma2(0)*beta(0)*(1.0-exp(-2.0*beta(0)*dt(i)))/2.0;
+      Q(1,0) = sigma2(0)*(1.0-2.0*exp(-beta(0)*dt(i))+exp(-2.0*beta(0)*dt(i)))/2.0;
       Q(0,1) = Q(1,0);
 
-      Q(2,2) = sigma2(1)*(dt(i)-2.0*(1.0-exp(-beta(1)*dt(i)))/beta(1)+(1.0-exp(-2.0*beta(1)*dt(i)))/(2.0*beta(1)))/pow(beta(1),2.0);
-      Q(3,3) = sigma2(1)*(1.0-exp(-2.0*beta(1)*dt(i)))/(2.0*beta(1));
-      Q(2,3) = sigma2(1)*(1.0-2.0*exp(-beta(1)*dt(i))+exp(-2.0*beta(1)*dt(i)))/(2.0*pow(beta(1),2.0));
+      Q(2,2) = sigma2(1)*(dt(i)-2.0*(1.0-exp(-beta(1)*dt(i)))/beta(1)+(1.0-exp(-2.0*beta(1)*dt(i)))/(2.0*beta(1)));
+      Q(3,3) = sigma2(1)*beta(1)*(1.0-exp(-2.0*beta(1)*dt(i)))/2.0;
+      Q(2,3) = sigma2(1)*(1.0-2.0*exp(-beta(1)*dt(i))+exp(-2.0*beta(1)*dt(i)))/2.0;
       Q(3,2) = Q(2,3);
 
       nll += MVNORM<Type>(Q)(eta);
