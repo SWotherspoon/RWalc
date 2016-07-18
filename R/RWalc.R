@@ -106,6 +106,7 @@ interpolateTrack <- function(data,predict=NULL,
   ## Interleave times
   track <- unique(rbind(data[,c("segment","date")],predict[,c("segment","date")]))
   track <- track[order(track$segment,track$date),]
+  rownames(track) <- NULL
 
   ## Which locations are observed and which predicted
   tab <- paste(track$segment,as.numeric(track$date),sep="\r")
