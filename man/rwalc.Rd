@@ -44,12 +44,16 @@ Returns a list with components
   \item{\code{par}}{vector of parameter estimates}
   \item{\code{track}}{dataframe of the fitted track}
   \item{\code{opt}}{the object returned by the optimizer}
-  \item{\code{tmb}}{the \pkg{TMB} object} The \code{track}
-  dataframe has columns \item{segment}{track segment}
-  \item{date}{time (as GMT POSIXct)} \item{x}{x coordinate}
-  \item{y}{y coordinate} \item{x.v}{x component of velocity}
-  \item{y.v}{y component of velocity} \item{x.se}{standard error
-  of x coordinate} \item{y.se}{standard error of y coordinate}
+  \item{\code{tmb}}{the \pkg{TMB} object}
+The \code{track} dataframe has columns
+  \item{segment}{track segment}
+  \item{date}{time (as GMT POSIXct)}
+  \item{x}{x coordinate}
+  \item{y}{y coordinate}
+  \item{x.v}{x component of velocity}
+  \item{y.v}{y component of velocity}
+  \item{x.se}{standard error of x coordinate}
+  \item{y.se}{standard error of y coordinate}
   \item{x.v.se}{standard error of x component of velocity}
   \item{y.v.se}{standard error of y component of velocity}
   \item{observed}{whether this was an observed time}
