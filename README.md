@@ -1,5 +1,8 @@
 # RWalc
 
+[![Travis-CI Build Status](https://travis-ci.org/SWotherspoon/RWalc.svg?branch=master)](https://travis-ci.org/SWotherspoon/RWalc)
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/SWotherspoon/RWalc?branch=master&svg=true)](https://ci.appveyor.com/project/SWotherspoon/RWalc)
+
 RWalc provides facilities for fitting an Ornstein-Uhlenbeck process
 model to animal tracking data and simulating tracks from the fit.
 
@@ -31,7 +34,7 @@ If you don't have `devtools` installed already, install it first.
 install.packages("devtools")
 ```
 
-Rwalc otherwise does not need devtools for normal use.
+RWalc otherwise does not need devtools for normal use.
 
 
 ## TODO

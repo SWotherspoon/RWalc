@@ -10,16 +10,16 @@ Description: Continuous time correlated random walk models for animal
     Ornstein-Uhlenbeck process model to animal tracking data (similar
     to the crawl package), and simulating tracks from the fitted model.
 Depends:
-    R(>= 3.3.0),
-    TMB
-Suggests:
-    knitr
+    R(>= 3.3.0)
 Imports:
+    TMB
     stats,
     png
 LinkingTo:
     TMB,
     RcppEigen
+Suggests:
+    knitr
 License: Mozilla Public License 2.0
 LazyData: TRUE
 VignetteBuilder: knitr
