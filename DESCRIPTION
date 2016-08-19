@@ -12,7 +12,7 @@ Description: Continuous time correlated random walk models for animal
 Depends:
     R(>= 3.3.0)
 Imports:
-    TMB
+    TMB,
     stats,
     png
 LinkingTo:
