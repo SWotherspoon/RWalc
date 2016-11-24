@@ -259,7 +259,7 @@ rwalcControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
 ##' \describe{
 ##'   \item{\code{"free"}}{independent parameters are estimated for x and y}
 ##'   \item{\code{"equal"}}{a common parameter is estimated for both x and y}
-##'   \item{\code{"fixed"}{the parameters are determined by \code{par}}
+##'   \item{\code{"fixed"}}{the parameters are determined by \code{par}}
 ##' }
 ##'
 ##' @title Correlated Random Walk Filter
