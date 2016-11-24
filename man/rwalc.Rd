@@ -118,12 +118,10 @@ control how the correlation parameters \eqn{\beta}{beta}, the
 standard deviations of the innovations for the velocity process
 \eqn{\sigma}{sigma} and the error scaling parameters
 \eqn{\tau}{tau} apply to the x and y processes:
-\tabular{ll}{
-\code{"free"} \tab independent parameters are estimated for
-    x and y \cr
-\code{"equal"} \tab a common parameter is estimated for both
-    x and y \cr
-\code{"fixed"} \tab the parameters are determined by \code{par}
+\describe{
+  \item{\code{"free"}}{independent parameters are estimated for x and y}
+  \item{\code{"equal"}}{a common parameter is estimated for both x and y}
+  \item{\code{"fixed"}}{the parameters are determined by \code{par}}
 }
 }
 \references{
