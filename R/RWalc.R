@@ -7,7 +7,7 @@
 ##' [lmin,lmin+360), but the subsequent longitudes in the sequence may
 ##' wander outside that range.
 ##'
-##' @title Wrapping Locations Around the Dateline.
+##' @title Wrap Locations Around the Dateline.
 ##' @param lon a vector of longitudes
 ##' @param lmin western boundary for wrapped longitudes
 ##' @return a vector of longitudes
@@ -21,17 +21,17 @@ unwrapLon <- function(lon,lmin=-180)
   cumsum(c(wrapLon(lon[1],lmin),wrapLon(diff(lon))))
 
 
-##' \code{interpolateTrack} interpolates a track to a given set of
-##' time points by one of several methods.
+##' Interpolate a track to a given set of time points by one of
+##' several methods.
 ##'
-##' The track may consist of several independent segments.  These may
-##' represent either distinct segments of a single track, or
-##' distinct tracks that may overlap in time.
+##' The track may consist of several independent segments.  These
+##' segments may represent either distinct segments of a single track,
+##' or distinct tracks that may overlap in time.
 ##'
-##' The input track must be given as a dataframe where each row is an
+##' The input track must is given as a dataframe where each row is an
 ##' observed location, with columns
 ##' \tabular{ll}{
-##' \code{segment} \tab integer label for segment (optional) \cr
+##' \code{segment} \tab integer label for the segment (optional)            \cr
 ##' \code{date} \tab observation time (GMT POSIXct) \cr
 ##' \code{x} \tab observed x coordinate \cr
 ##' \code{y} \tab observed y coordinate \cr
@@ -47,8 +47,8 @@ unwrapLon <- function(lon,lmin=-180)
 ##' POSIXct times, otherwise it must be a dataframe with columns
 ##'
 ##' \tabular{ll}{
-##' segment \tab track segment (integer, optional) \cr
-##' date \tab prediction time (as GMT POSIXct)
+##' \code{segment} \tab track segment (integer, optional) \cr
+##' \code{date} \tab prediction time (as GMT POSIXct)
 ##' }
 ##'
 ##' The fitted track is returned as a dataframe containing both the
@@ -58,11 +58,11 @@ unwrapLon <- function(lon,lmin=-180)
 ##'
 ##' Several interpolation/smoothing methods are available
 ##' \describe{
-##' \item{"approx"}{linear interpolation in x and y}
-##' \item{"loess"}{loess smoothing in x and y}
-##' \item{"gc"}{Assumes x is longitude and y is latitude and
-##' interpolates along a great circle}
-##' \item{"mean"}{the track is replaced by its weighted centroid}
+##'   \item{\code{"approx"}}{linear interpolation in x and y}
+##'   \item{\code{"loess"}}{loess smoothing in x and y}
+##'   \item{\code{"gc"}}{Assumes x is longitude and y is latitude and
+##'   interpolates along a great circle}
+##'   \item{\code{"mean"}}{the track is replaced by its weighted centroid}
 ##' }
 ##'
 ##'
@@ -256,12 +256,10 @@ rwalcControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
 ##' standard deviations of the innovations for the velocity process
 ##' \eqn{\sigma}{sigma} and the error scaling parameters
 ##' \eqn{\tau}{tau} apply to the x and y processes:
-##' \tabular{ll}{
-##' \code{"free"} \tab independent parameters are estimated for
-##'     x and y \cr
-##' \code{"equal"} \tab a common parameter is estimated for both
-##'     x and y \cr
-##' \code{"fixed"} \tab the parameters are determined by \code{par}
+##' \describe{
+##'   \item{\code{"free"}}{independent parameters are estimated for x and y}
+##'   \item{\code{"equal"}}{a common parameter is estimated for both x and y}
+##'   \item{\code{"fixed"}{the parameters are determined by \code{par}}
 ##' }
 ##'
 ##' @title Correlated Random Walk Filter
@@ -289,11 +287,15 @@ rwalcControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
 ##'   \item{\code{track}}{dataframe of the fitted track}
 ##'   \item{\code{opt}}{the object returned by the optimizer}
 ##'   \item{\code{tmb}}{the \pkg{TMB} object} The \code{track}
-##'   dataframe has columns \item{segment}{track segment}
-##'   \item{date}{time (as GMT POSIXct)} \item{x}{x coordinate}
-##'   \item{y}{y coordinate} \item{x.v}{x component of velocity}
-##'   \item{y.v}{y component of velocity} \item{x.se}{standard error
-##'   of x coordinate} \item{y.se}{standard error of y coordinate}
+##'   dataframe has columns
+##'   \item{segment}{track segment}
+##'   \item{date}{time (as GMT POSIXct)}
+##'   \item{x}{x coordinate}
+##'   \item{y}{y coordinate}
+##'   \item{x.v}{x component of velocity}
+##'   \item{y.v}{y component of velocity}
+##'   \item{x.se}{standard error of x coordinate}
+##'   \item{y.se}{standard error of y coordinate}
 ##'   \item{x.v.se}{standard error of x component of velocity}
 ##'   \item{y.v.se}{standard error of y component of velocity}
 ##'   \item{observed}{whether this was an observed time}
@@ -317,14 +319,14 @@ rwalcControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
 ##' @importFrom stats nlminb optim
 ##' @export
 rwalc <- function(data,
-                predict=NULL,
-                track=NULL,
-                par=c(1,1,1,1,1,1),
-                betaPar=c("free","equal","fixed"),
-                sigmaPar=c("free","equal","fixed"),
-                tauPar=c("free","equal","fixed"),
-                tdf=-1,bshrink=1.0E-6,
-                control=rwalcControl()) {
+                  predict=NULL,
+                  track=NULL,
+                  par=c(1,1,1,1,1,1),
+                  betaPar=c("free","equal","fixed"),
+                  sigmaPar=c("free","equal","fixed"),
+                  tauPar=c("free","equal","fixed"),
+                  tdf=-1,bshrink=1.0E-6,
+                  control=rwalcControl()) {
 
   cl <- match.call()
 
@@ -393,18 +395,20 @@ rwalc <- function(data,
 
 
 
-##' This is a convenience function that subsets the fitted track to
-##' return only those locations that correspond to predictions.
+##' Subset the fitted track to return only those locations that
+##' correspond to the prediction times and segments.
+##'
+##' The current implementation can only extract predicted locations
+##' for the times and segments specified in the call to \code{rwalc}.
 ##'
 ##' @title Extract Predicted RWalc Track
-##' @param object A fitted object from \code{rwalc}.
+##' @param object A fitted object of class "rwalc".
 ##' @param vel Logical indicating whether estimated velocities should
 ##'   be returned.
 ##' @param se Logical indicating whether estimated standard errors
 ##'   should be returned.
 ##' @param ... Ignored.
-##' @return If \code{vel} and \code{se} are true, return a dataframe
-##'   of predicted track locations with columns
+##' @return Returns a dataframe of predicted track locations with columns
 ##'   \item{segment}{track segment}
 ##'   \item{date}{time (as GMT POSIXct)}
 ##'   \item{x}{x coordinate}
@@ -415,9 +419,9 @@ rwalc <- function(data,
 ##'   \item{y.se}{standard error of y coordinate}
 ##'   \item{x.v.se}{standard error of x component of velocity}
 ##'   \item{y.v.se}{standard error of x component of velocity}
-##' Otherwise only the appropriate subset of columns are returned
+##' The velocities are omitted when \code{vel} is \code{FALSE} and the
+##' standard errors are omitted when \code{se} is \code{FALSE}.
 ##' @export
-##'
 predict.rwalc <- function(object,vel=FALSE,se=FALSE,...) {
   object$track[object$track$predicted,
                c("segment","date","x","y",
@@ -428,19 +432,18 @@ predict.rwalc <- function(object,vel=FALSE,se=FALSE,...) {
 
 
 
-##' This is a convenience function that subsets the fitted track to
-##' return only those locations that correspond to the original
-##' observations.
+##' Subset the fitted track to return only those locations that
+##' correspond to times and segments present in the observed track.
 ##'
 ##' @title Extract Fitted RWalc Track
-##' @param object A fitted object from \code{rwalc}.
+##' @param object A fitted object of class "rwalc".
 ##' @param vel Logical indicating whether estimated velocities
 ##'   should be returned.
 ##' @param se Logical indicating whether estimated standard errors
 ##'   should be returned.
 ##' @param ... Ignored.
-##' @return If \code{vel} and \code{se} are true, return a dataframe
-##'   of fitted track locations with columns
+##' @return Returns a dataframe of fitted track locations
+##' with columns
 ##'   \item{segment}{track segment}
 ##'   \item{date}{time (as GMT POSIXct)}
 ##'   \item{x}{x coordinate}
@@ -451,7 +454,8 @@ predict.rwalc <- function(object,vel=FALSE,se=FALSE,...) {
 ##'   \item{y.se}{standard error of y coordinate}
 ##'   \item{x.v.se}{standard error of x component of velocity}
 ##'   \item{y.v.se}{standard error of x component of velocity}
-##' Otherwise only the appropriate subset of columns are returned.
+##' The velocities are omitted when \code{vel} is \code{FALSE} and the
+##' standard errors are omitted when \code{se} is \code{FALSE}.
 ##' @export
 fitted.rwalc <- function(object,vel=FALSE,se=FALSE,...) {
   object$track[object$track$observed,
@@ -473,7 +477,7 @@ fitted.rwalc <- function(object,vel=FALSE,se=FALSE,...) {
 ##' argument.
 ##'
 ##' @title Plot a Fitted RWalc Track
-##' @param x A fitted object from \code{rwalc}..
+##' @param x A fitted object of class "rwalc".
 ##' @param which Select the plots to display (see details).
 ##' @param segment Select the segments to display (\code{NULL} displays all)
 ##' @param ask if \code{TRUE}, user is asked before each plot is displayed.
@@ -482,8 +486,8 @@ fitted.rwalc <- function(object,vel=FALSE,se=FALSE,...) {
 ##' @importFrom graphics par plot lines points polygon segments
 ##' @export
 plot.rwalc <- function(x,which=1:2,segment=NULL,
-                     ask = prod(par("mfcol")) < length(which) && dev.interactive(),
-                     ...) {
+                       ask = prod(par("mfcol")) < length(which) && dev.interactive(),
+                       ...) {
 
   plot.profile <- function(date,seg,y,se,lab,date0,y0) {
     se[!is.finite(se)] <- 0
@@ -535,10 +539,9 @@ plot.rwalc <- function(x,which=1:2,segment=NULL,
 
 ##' Create a dataframe of the multiplicative scaling factors for
 ##' scaling location accuracy from the reported Argos location class.
-##' These are the as used in \pkg{crawl}.
 ##'
-##' This function requires that the "x" coordinate represents
-##' longitude and the "y" coordinate represents latitude.
+##' This function requires that the "x" coordinate of the track
+##' represents longitude and the "y" coordinate represents latitude.
 ##'
 ##' @title ARGOS Error Scale Factors
 ##' @param data A dataframe representing the track (see details).
@@ -559,7 +562,7 @@ argosScale <- function(data,class) {
 
 
 
-##' Constructs the transition matrix \code{A} and innovation
+##' Construct the transition matrix \code{A} and innovation
 ##' covariance matrix \code{Q} for the continuous time random walk
 ##' model corresponding to parameters \code{beta}, \code{sigma} and
 ##' time step \code{dt}.
@@ -598,7 +601,10 @@ systemMatrices <- function(beta,sigma,dt) {
 
 
 
-##' Given a a template track and the parameters of a rwalc model this
+##' Simulate a new track from the parameters of a fitted \code{rwalc}
+##' model.
+##'
+##' Given a template track and the parameters of a rwalc model this
 ##' function generates a new track of the same length that coincides
 ##' with the fitted track at the start point and optionally other
 ##' specified points along the template track.
