@@ -27,18 +27,18 @@ Returns a dataframe with columns
   \item{y}{y coordinate}
 }
 \description{
-\code{interpolateTrack} interpolates a track to a given set of
-time points by one of several methods.
+Interpolate a track to a given set of time points by one of
+several methods.
 }
 \details{
-The track may consist of several independent segments.  These may
-represent either distinct segments of a single track, or
-distinct tracks that may overlap in time.
+The track may consist of several independent segments.  These
+segments may represent either distinct segments of a single track,
+or distinct tracks that may overlap in time.
 
-The input track must be given as a dataframe where each row is an
+The input track must is given as a dataframe where each row is an
 observed location, with columns
 \tabular{ll}{
-\code{segment} \tab integer label for segment (optional) \cr
+\code{segment} \tab integer label for the segment (optional)            \cr
 \code{date} \tab observation time (GMT POSIXct) \cr
 \code{x} \tab observed x coordinate \cr
 \code{y} \tab observed y coordinate \cr
@@ -54,8 +54,8 @@ consists of a single segment, these argument may be a vector of
 POSIXct times, otherwise it must be a dataframe with columns
 
 \tabular{ll}{
-segment \tab track segment (integer, optional) \cr
-date \tab prediction time (as GMT POSIXct)
+\code{segment} \tab track segment (integer, optional) \cr
+\code{date} \tab prediction time (as GMT POSIXct)
 }
 
 The fitted track is returned as a dataframe containing both the
@@ -65,11 +65,11 @@ column.
 
 Several interpolation/smoothing methods are available
 \describe{
-\item{"approx"}{linear interpolation in x and y}
-\item{"loess"}{loess smoothing in x and y}
-\item{"gc"}{Assumes x is longitude and y is latitude and
-interpolates along a great circle}
-\item{"mean"}{the track is replaced by its weighted centroid}
+  \item{\code{"approx"}}{linear interpolation in x and y}
+  \item{\code{"loess"}}{loess smoothing in x and y}
+  \item{\code{"gc"}}{Assumes x is longitude and y is latitude and
+  interpolates along a great circle}
+  \item{\code{"mean"}}{the track is replaced by its weighted centroid}
 }
 }
 

@@ -6,8 +6,8 @@
 \title{Continuous-Time Correlated Random Walk Models for Animal Movement}
 \description{
 Provides facilities for fitting continuous time correlated random
-walk models to animal tracking data, and simulating tracks from the
-fitted model.
+walk models to animal tracking data, and simulating new tracks from
+the fitted model.
 }
 \author{
 Simon Wotherspoon and Ben Raymond

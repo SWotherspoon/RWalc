@@ -19,7 +19,7 @@ A list with components
   \item{\code{Q}}{innovation covariance matrix}
 }
 \description{
-Constructs the transition matrix \code{A} and innovation
+Construct the transition matrix \code{A} and innovation
 covariance matrix \code{Q} for the continuous time random walk
 model corresponding to parameters \code{beta}, \code{sigma} and
 time step \code{dt}.

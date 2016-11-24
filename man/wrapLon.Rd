@@ -3,7 +3,7 @@
 \name{wrapLon}
 \alias{unwrapLon}
 \alias{wrapLon}
-\title{Wrapping Locations Around the Dateline.}
+\title{Wrap Locations Around the Dateline.}
 \usage{
 wrapLon(lon, lmin = -180)
 

@@ -29,21 +29,22 @@ provided at two (approximate) spatial resolutions: 0.1 degree and
 }
 \details{
 Returns a function of three arguments
-\tabular{ll}{
-\code{tm} \tab time \cr
-\code{lon} \tab longitude \cr
-\code{lat} \tab latitude \cr
+\tabular{lcl}{
+ \code{tm} \tab \tab time \cr
+ \code{lon} \tab \tab longitude \cr
+ \code{lat} \tab \tab latitude \cr
 }
-This mask is time independent and the \code{tm} argument to the
-mask is ignored.
+suitable for use with \code{rwalcSimulate}. This mask is actually
+independent of time and the \code{tm} argument to the mask is
+ignored.
 }
 \examples{
 mask  <- gshhsMask() ## initialize land mask function
 mask(0,100,-65) ## test point - time lon,lat
 }
 \references{
-Wessel, P., and W. H. F. Smith, A Global
-  Self-consistent, Hierarchical, High-resolution Shoreline Database,
+Wessel, P., and W. H. F. Smith, A Global Self-consistent,
+  Hierarchical, High-resolution Shoreline Database,
   J. Geophys. Res., 101, #B4, pp. 8741-8743, 1996.
   \url{https://www.ngdc.noaa.gov/mgg/shorelines/gshhs.html}
 }

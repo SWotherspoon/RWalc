@@ -19,10 +19,9 @@ The input dataframe with the appended columns
 \description{
 Create a dataframe of the multiplicative scaling factors for
 scaling location accuracy from the reported Argos location class.
-These are the as used in \pkg{crawl}.
 }
 \details{
-This function requires that the "x" coordinate represents
-longitude and the "y" coordinate represents latitude.
+This function requires that the "x" coordinate of the track
+represents longitude and the "y" coordinate represents latitude.
 }
 

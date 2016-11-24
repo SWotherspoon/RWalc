@@ -45,11 +45,15 @@ Returns a list with components
   \item{\code{track}}{dataframe of the fitted track}
   \item{\code{opt}}{the object returned by the optimizer}
   \item{\code{tmb}}{the \pkg{TMB} object} The \code{track}
-  dataframe has columns \item{segment}{track segment}
-  \item{date}{time (as GMT POSIXct)} \item{x}{x coordinate}
-  \item{y}{y coordinate} \item{x.v}{x component of velocity}
-  \item{y.v}{y component of velocity} \item{x.se}{standard error
-  of x coordinate} \item{y.se}{standard error of y coordinate}
+  dataframe has columns
+  \item{segment}{track segment}
+  \item{date}{time (as GMT POSIXct)}
+  \item{x}{x coordinate}
+  \item{y}{y coordinate}
+  \item{x.v}{x component of velocity}
+  \item{y.v}{y component of velocity}
+  \item{x.se}{standard error of x coordinate}
+  \item{y.se}{standard error of y coordinate}
   \item{x.v.se}{standard error of x component of velocity}
   \item{y.v.se}{standard error of y component of velocity}
   \item{observed}{whether this was an observed time}
@@ -58,69 +62,6 @@ Returns a list with components
 \description{
 Fit a continuous time correlated random walk to filter a track and
 predict locations for given time steps.
-}
-\details{
-The filter fits a continuous time correlated random walk movement
-model similar to that described in Johnson et al. (2008) and
-implemented in the package \pkg{crawl}.  Unlike the crawl model,
-the model implemented here has no drift or haul out components,
-and assumes t distributed errors as described by Albertsen et
-al. (2015) if \code{tdf} is positive.
-
-The input track may consist of several independent segments.
-These may represent either non-overlapping segments of a single
-track, or distinct tracks that may overlap in time.  The fitted
-random walk is correlated within a segment, but segments are
-assumed independent. It is assumed the input dataframe is ordered
-by segment and by date within segment.
-
-The input track to be filtered is supplied as a dataframe
-(\code{data}) where each row is an observed location, with columns
-\tabular{ll}{
-segment \tab track segment (integer, optional) \cr
-date \tab observation time (as GMT POSIXct) \cr
-x \tab observed x coordinate \cr
-y \tab observed y coordinate \cr
-x.se \tab standard error of the x coordinate (optional) \cr
-y.se \tab standard error of the y coordinate (optional) \cr
-}
-The filtering model assumes the errors in the spatial coordinates
-are have standard deviations 'x.se' and 'y.se' scaled by the
-\eqn{\tau}{tau} model parameters. If these columns are missing,
-they are assumed to be 1.
-
-An estimate of the track is required to initialize the fitting
-process.  This can be supplied by the user through the
-\code{track} argument as a dataframe with the same format returned
-by \code{\link{interpolateTrack}}.  When this argument is
-\code{NULL}, the initial track is generated with
-\code{interpolateTrack} from the \code{data} and \code{predict}
-arguments.
-
-The \code{predict} argument specifies prediction times for which
-locations along the track will be predicted when no initial track
-is given.  When the track consists of a single segment, these
-argument may be a vector of POSIXct times, otherwise it must be a
-dataframe with columns
-\tabular{ll}{
-segment \tab track segment (integer, optional) \cr
-date \tab prediction time (as GMT POSIXct)
-}
-If an initial track is given, the prediction times are determined
-from that.
-
-The arguments \code{betaPar}, \code{sigmaPar} and \code{tauPar}
-control how the correlation parameters \eqn{\beta}{beta}, the
-standard deviations of the innovations for the velocity process
-\eqn{\sigma}{sigma} and the error scaling parameters
-\eqn{\tau}{tau} apply to the x and y processes:
-\tabular{ll}{
-\code{"free"} \tab independent parameters are estimated for
-    x and y \cr
-\code{"equal"} \tab a common parameter is estimated for both
-    x and y \cr
-\code{"fixed"} \tab the parameters are determined by \code{par}
-}
 }
 \references{
 Johnson, D. S., London, J. M., Lea, M. A. and Durban,
