@@ -764,4 +764,49 @@ rwalcSimulate <- function(data,par,fixed=NULL,
 
 
 
+##' Generate a surrogate track from a template track by phase
+##' randomization.
+##'
+##' Given a template track generate a new track of the same length
+##' that coincides with the fitted track at the start and end point of
+##' each segment.
+##'
+##' Tracks are generated in the plane, and there are no facilities for
+##' placing additional constraints on the track.
+##'
+##' @title Surrogate tracks by phase randomization.
+##' @param data A dataframe representing the template track.
+##' @return Returns a dataframe representing the surrogate track with
+##'   columns
+##'   \item{segment}{track segment}
+##'   \item{date}{time (as GMT POSIXct)}
+##'   \item{x}{x coordinate}
+##'   \item{y}{y coordinate}
+##' @references
+##'   Kantz, H., & Schreiber, T. (2004). Nonlinear time series analysis.
+##'   Cambridge university press.
+##' @importFrom stats mvfft runif
+##' @export
+rwalcSurrogate <- function(data) {
 
+  if(is.null(data$segment))
+    data$segment <- 1
+
+  surrogate <- function(df) {
+    ## Extract track increments
+    d <- cbind(diff(as.numeric(df$date)),diff(df$x),diff(df$y))
+    ## Creat random phases in connjugate pairs
+    p <- double(nrow(d))
+    k <- seq_len((length(p)-1)%/%2)
+    p[k+1] <- p[length(p)+1-k] <- runif(length(k),-pi,pi)
+    ## Random phases and sum increments to rebuild the track
+    d <- mvfft(exp(1i*p)*mvfft(d),inverse=TRUE)
+    data.frame(
+      segment=df$segment,
+      date=.POSIXct(cumsum(c(as.numeric(df$date[1]),Re(d[,1]))),"GMT"),
+      x=cumsum(c(df$x[1],Re(d[,2]))),
+      y=cumsum(c(df$y[1],Re(d[,3]))))
+  }
+
+  do.call(rbind,lapply(split(data[,c("segment","data","x","y")],data$segment),surrogate))
+}
