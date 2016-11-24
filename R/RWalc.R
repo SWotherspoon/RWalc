@@ -286,8 +286,8 @@ rwalcControl <- function(optim=c("nlminb","optim"),verbose=FALSE,...) {
 ##'   \item{\code{par}}{vector of parameter estimates}
 ##'   \item{\code{track}}{dataframe of the fitted track}
 ##'   \item{\code{opt}}{the object returned by the optimizer}
-##'   \item{\code{tmb}}{the \pkg{TMB} object} The \code{track}
-##'   dataframe has columns
+##'   \item{\code{tmb}}{the \pkg{TMB} object}
+##' The \code{track} dataframe has columns
 ##'   \item{segment}{track segment}
 ##'   \item{date}{time (as GMT POSIXct)}
 ##'   \item{x}{x coordinate}
