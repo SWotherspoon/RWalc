@@ -7,7 +7,7 @@
 \method{predict}{rwalc}(object, vel = FALSE, se = FALSE, ...)
 }
 \arguments{
-\item{object}{A fitted object from \code{rwalc}.}
+\item{object}{A fitted object of class "rwalc".}
 
 \item{vel}{Logical indicating whether estimated velocities should
 be returned.}
@@ -18,8 +18,7 @@ should be returned.}
 \item{...}{Ignored.}
 }
 \value{
-If \code{vel} and \code{se} are true, return a dataframe
-  of predicted track locations with columns
+Returns a dataframe of predicted track locations with columns
   \item{segment}{track segment}
   \item{date}{time (as GMT POSIXct)}
   \item{x}{x coordinate}
@@ -30,10 +29,15 @@ If \code{vel} and \code{se} are true, return a dataframe
   \item{y.se}{standard error of y coordinate}
   \item{x.v.se}{standard error of x component of velocity}
   \item{y.v.se}{standard error of x component of velocity}
-Otherwise only the appropriate subset of columns are returned
+The velocities are omitted when \code{vel} is \code{FALSE} and the
+standard errors are omitted when \code{se} is \code{FALSE}.
 }
 \description{
-This is a convenience function that subsets the fitted track to
-return only those locations that correspond to predictions.
+Subset the fitted track to return only those locations that
+correspond to the prediction times and segments.
+}
+\details{
+The current implementation can only extract predicted locations
+for the times and segments specified in the call to \code{rwalc}.
 }
 

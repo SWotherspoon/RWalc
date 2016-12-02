@@ -8,7 +8,7 @@
   ask = prod(par("mfcol")) < length(which) && dev.interactive(), ...)
 }
 \arguments{
-\item{x}{A fitted object from \code{rwalc}..}
+\item{x}{A fitted object of class "rwalc".}
 
 \item{which}{Select the plots to display (see details).}
 

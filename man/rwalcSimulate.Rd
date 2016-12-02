@@ -36,12 +36,15 @@ Returns a dataframe representing the simulated track with
   \item{y.v}{y component of velocity}
 }
 \description{
-Given a a template track and the parameters of a rwalc model this
+Simulate a new track from the parameters of a fitted \code{rwalc}
+model.
+}
+\details{
+Given a template track and the parameters of a rwalc model this
 function generates a new track of the same length that coincides
 with the fitted track at the start point and optionally other
 specified points along the template track.
-}
-\details{
+
 Locations from the template track can be marked as fixed with the
 \code{fixed} argument. This should either be \code{NULL} or a
 vector with an entry for each location, with entries indicating

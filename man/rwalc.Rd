@@ -44,12 +44,16 @@ Returns a list with components
   \item{\code{par}}{vector of parameter estimates}
   \item{\code{track}}{dataframe of the fitted track}
   \item{\code{opt}}{the object returned by the optimizer}
-  \item{\code{tmb}}{the \pkg{TMB} object} The \code{track}
-  dataframe has columns \item{segment}{track segment}
-  \item{date}{time (as GMT POSIXct)} \item{x}{x coordinate}
-  \item{y}{y coordinate} \item{x.v}{x component of velocity}
-  \item{y.v}{y component of velocity} \item{x.se}{standard error
-  of x coordinate} \item{y.se}{standard error of y coordinate}
+  \item{\code{tmb}}{the \pkg{TMB} object}
+The \code{track} dataframe has columns
+  \item{segment}{track segment}
+  \item{date}{time (as GMT POSIXct)}
+  \item{x}{x coordinate}
+  \item{y}{y coordinate}
+  \item{x.v}{x component of velocity}
+  \item{y.v}{y component of velocity}
+  \item{x.se}{standard error of x coordinate}
+  \item{y.se}{standard error of y coordinate}
   \item{x.v.se}{standard error of x component of velocity}
   \item{y.v.se}{standard error of y component of velocity}
   \item{observed}{whether this was an observed time}
@@ -114,12 +118,10 @@ control how the correlation parameters \eqn{\beta}{beta}, the
 standard deviations of the innovations for the velocity process
 \eqn{\sigma}{sigma} and the error scaling parameters
 \eqn{\tau}{tau} apply to the x and y processes:
-\tabular{ll}{
-\code{"free"} \tab independent parameters are estimated for
-    x and y \cr
-\code{"equal"} \tab a common parameter is estimated for both
-    x and y \cr
-\code{"fixed"} \tab the parameters are determined by \code{par}
+\describe{
+  \item{\code{"free"}}{independent parameters are estimated for x and y}
+  \item{\code{"equal"}}{a common parameter is estimated for both x and y}
+  \item{\code{"fixed"}}{the parameters are determined by \code{par}}
 }
 }
 \references{
