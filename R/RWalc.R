@@ -667,9 +667,9 @@ systemMatrices <- function(beta,sigma,dt) {
 ##' @importFrom stats rnorm
 ##' @export
 rwalcSimulate <- function(data,par,fixed=NULL,
-                        fixed.err=diag(1.0E-6,4,4),
-                        point.check=function(tm,x,y) TRUE,
-                        point.accept=NULL) {
+                          fixed.err=diag(1.0E-6,4,4),
+                          point.check=function(tm,x,y) TRUE,
+                          point.accept=NULL) {
 
   beta <- par[1:2]
   sigma <- par[3:4]
