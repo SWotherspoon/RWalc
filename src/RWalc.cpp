@@ -1,10 +1,10 @@
 /* Rwalc.cpp
 
-This code is heavily based on and is a simmplification of the TMB code
+This code is heavily based on and is a simplification of the TMB code
 from the argosTrack package (https://github.com/calbertsen/argosTrack).
 
 */
-
+#define TMB_LIB_INIT R_init_mypkg
 #include <TMB.hpp>
 
 using namespace density;
@@ -12,7 +12,9 @@ using namespace density;
 
 /** \brief Multivariate t distribution with user supplied scale matrix
 
-Class to evaluate the negative log density of a multivariate t distributed variable with general scale matrix Sigma and location vector 0 and df degrees of freedom.
+  Class to evaluate the negative log density of a multivariate t
+  distributed variable with general scale matrix Sigma and location
+  vector 0 and df degrees of freedom.
 */
 template <class Type>
 class MVT_t: public MVNORM_t<Type>
@@ -64,9 +66,7 @@ public:
 
 
 template<class Type>
-Type objective_function<Type>::operator() ()
-{
-
+Type objective_function<Type>::operator() () {
 
   DATA_MATRIX(y);               // (lon, lat) observations
   DATA_MATRIX(w);               // Error weights
