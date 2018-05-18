@@ -34,4 +34,3 @@ for available options.
 \seealso{
 \code{\link{nlminb}}, \code{\link{optim}}.
 }
-

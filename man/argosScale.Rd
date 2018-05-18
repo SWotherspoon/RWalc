@@ -24,4 +24,3 @@ scaling location accuracy from the reported Argos location class.
 This function requires that the "x" coordinate of the track
 represents longitude and the "y" coordinate represents latitude.
 }
-

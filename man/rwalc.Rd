@@ -138,4 +138,3 @@ Johnson, D. S., London, J. M., Lea, M. A. and Durban,
   statistical modeling using the t distribution. Journal of the
   American Statistical Association, 84(408), 881-896.
 }
-

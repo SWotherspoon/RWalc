@@ -40,4 +40,3 @@ correspond to the prediction times and segments.
 The current implementation can only extract predicted locations
 for the times and segments specified in the call to \code{rwalc}.
 }
-

@@ -72,4 +72,3 @@ Several interpolation/smoothing methods are available
   \item{\code{"mean"}}{the track is replaced by its weighted centroid}
 }
 }
-

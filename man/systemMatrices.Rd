@@ -24,4 +24,3 @@ covariance matrix \code{Q} for the continuous time random walk
 model corresponding to parameters \code{beta}, \code{sigma} and
 time step \code{dt}.
 }
-

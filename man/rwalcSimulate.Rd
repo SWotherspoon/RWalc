@@ -79,4 +79,3 @@ correction and without a suitable \code{point.check} function,
 there is nothing prevent the track extending outside the [-90,90]
 latitudinal limits.
 }
-

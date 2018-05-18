@@ -12,4 +12,3 @@ the fitted model.
 \author{
 Simon Wotherspoon and Ben Raymond
 }
-

@@ -51,4 +51,3 @@ Wessel, P., and W. H. F. Smith, A Global Self-consistent,
 \seealso{
 \code{\link{rwalc}}
 }
-

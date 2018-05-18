@@ -37,4 +37,3 @@ standard errors are omitted when \code{se} is \code{FALSE}.
 Subset the fitted track to return only those locations that
 correspond to times and segments present in the observed track.
 }
-

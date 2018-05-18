@@ -29,4 +29,3 @@ track over time, while the third plot shows the track.  A subset
 of the plots to display can be selected with the \code{which}
 argument.
 }
-
