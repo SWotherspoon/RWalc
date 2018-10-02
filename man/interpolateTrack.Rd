@@ -4,8 +4,8 @@
 \alias{interpolateTrack}
 \title{Track Interpolation}
 \usage{
-interpolateTrack(data, predict = NULL, method = c("approx", "loess", "gc",
-  "mean"), loess.span = 0.1)
+interpolateTrack(data, predict = NULL, method = c("approx", "loess",
+  "gc", "mean"), loess.span = 0.1)
 }
 \arguments{
 \item{data}{A dataframe representing the track (see details).}
