@@ -696,8 +696,8 @@ rwalcSimulate <- function(data,par,fixed=NULL,
   }
 
   ## Times and matrix of states
-  xs <- if(all(c("x.se","y.se") %in% colnames(data)))
-          unname(as.matrix(data[,c("x","y","x.se","y.se")]))
+  xs <- if(all(c("x.v","y.v") %in% colnames(data)))
+          unname(as.matrix(data[,c("x","y","x.v","y.v")]))
         else
           cbind(unname(as.matrix(data[,c("x","y")])),0,0)
   n <- nrow(xs)
