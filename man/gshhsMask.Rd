@@ -4,8 +4,7 @@
 \alias{gshhsMask}
 \title{A land mask based on the GSHHS data set}
 \usage{
-gshhsMask(res = c("0.1", "0.05"), land = FALSE, latmin = -90,
-  latmax = 90)
+gshhsMask(res = c("0.1", "0.05"), land = FALSE, latmin = -90, latmax = 90)
 }
 \arguments{
 \item{res}{The spatial resolution of the mask, in degrees.}

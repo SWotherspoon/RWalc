@@ -4,10 +4,18 @@
 \alias{rwalc}
 \title{Correlated Random Walk Filter}
 \usage{
-rwalc(data, predict = NULL, track = NULL, par = c(1, 1, 1, 1, 1, 1),
-  betaPar = c("free", "equal", "fixed"), sigmaPar = c("free", "equal",
-  "fixed"), tauPar = c("free", "equal", "fixed"), tdf = -1,
-  bshrink = 1e-06, control = rwalcControl())
+rwalc(
+  data,
+  predict = NULL,
+  track = NULL,
+  par = c(1, 1, 1, 1, 1, 1),
+  betaPar = c("free", "equal", "fixed"),
+  sigmaPar = c("free", "equal", "fixed"),
+  tauPar = c("free", "equal", "fixed"),
+  tdf = -1,
+  bshrink = 1e-06,
+  control = rwalcControl()
+)
 }
 \arguments{
 \item{data}{A dataframe representing the track (see details).}

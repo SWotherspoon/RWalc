@@ -4,8 +4,14 @@
 \alias{rwalcSimulate}
 \title{RWalc track sampler}
 \usage{
-rwalcSimulate(data, par, fixed = NULL, fixed.err = diag(1e-06, 4, 4),
-  point.check = function(tm, x, y) TRUE, point.accept = NULL)
+rwalcSimulate(
+  data,
+  par,
+  fixed = NULL,
+  fixed.err = diag(1e-06, 4, 4),
+  point.check = function(tm, x, y) TRUE,
+  point.accept = NULL
+)
 }
 \arguments{
 \item{data}{A dataframe representing the template track.}
