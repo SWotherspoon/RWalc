@@ -704,7 +704,7 @@ rwalcSimulate <- function(data,par,fixed=NULL,
 
   ## Prior mean and variance for each state
   ms <- xs
-  Vs <- array(fixed.err,c(4,4,n))
+  Vs <- fixed.err <- array(fixed.err,c(4,4,n))
 
   ## Forward pass - generate priors from movement model
   for(k in 2:n)
@@ -721,7 +721,6 @@ rwalcSimulate <- function(data,par,fixed=NULL,
         k0 <- k
         mu <- ms[k0,]
         R <- chol(Vs[,,k0])
-        x <- ms[k0,] + drop(rnorm(4)%*%chol(Vs[,,k0]))
       } else {
         ## Kalman gain
         ## K <- Vs[,,k]%*%t(As[[k]])%*%solve(As[[k]]%*%Vs[,,k]%*%t(As[[k]])+Qs[[k]])
@@ -743,10 +742,11 @@ rwalcSimulate <- function(data,par,fixed=NULL,
       }
       xs[k,] <<- x
 
-      ## Allow discontinuity at a fixed point
-      if(fixed[k]==2) {
-        x <- ms[k,] + drop(rnorm(4)%*%chol(fixed.err))
+      if(fixed[k]) {
         k0 <- k
+        ## Allow discontinuity at a fixed point
+        if(fixed[k]==2)
+          x <- ms[k,] + drop(rnorm(4)%*%chol(fixed.err[,,k]))
       }
     }
     ## On success, return 0

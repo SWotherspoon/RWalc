@@ -1,7 +1,7 @@
 Package: RWalc
 Type: Package
 Title: Continuous-Time Correlated Random Walk Models for Animal Movement
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(
     as.person("Simon Wotherspoon <Simon.Wotherspoon@utas.edu.au> [aut,cre]"),
     as.person("Ben Raymond <Ben.Raymond@add.gov.au> [aut]"))
