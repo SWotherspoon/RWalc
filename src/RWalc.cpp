@@ -4,7 +4,7 @@ This code is heavily based on and is a simplification of the TMB code
 from the argosTrack package (https://github.com/calbertsen/argosTrack).
 
 */
-#define TMB_LIB_INIT R_init_mypkg
+#define TMB_LIB_INIT R_init_RWalc
 #include <TMB.hpp>
 
 using namespace density;
@@ -68,7 +68,7 @@ public:
 template<class Type>
 Type objective_function<Type>::operator() () {
 
-  DATA_MATRIX(y);               // (lon, lat) observations
+  DATA_MATRIX(y);               // (x, y) observations
   DATA_MATRIX(w);               // Error weights
   DATA_VECTOR(dt);              // Time steps
   DATA_IVECTOR(obs);            // Indices of the observed states

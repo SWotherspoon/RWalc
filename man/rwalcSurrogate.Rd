@@ -11,11 +11,11 @@ rwalcSurrogate(data)
 }
 \value{
 Returns a dataframe representing the surrogate track with
-  columns
-  \item{segment}{track segment}
-  \item{date}{time (as GMT POSIXct)}
-  \item{x}{x coordinate}
-  \item{y}{y coordinate}
+  columns:
+  - `segment`: track segment
+  - `date`: time (as GMT POSIXct)
+  - `x`: x coordinate
+  - `y`: y coordinate
 }
 \description{
 Generate a surrogate track from a template track by phase

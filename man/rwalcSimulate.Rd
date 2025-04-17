@@ -28,21 +28,21 @@ location and returns a logical indicating whether the location
 is acceptable.}
 
 \item{point.accept}{A logical vector indicating which locations
-should not be checked with the \code{point.check} function.
-Defaults to the value of \code{fixed}.}
+should not be checked with the `point.check` function.
+Defaults to the value of `fixed`.}
 }
 \value{
 Returns a dataframe representing the simulated track with
-  columns
-  \item{segment}{track segment}
-  \item{date}{time (as GMT POSIXct)}
-  \item{x}{x coordinate}
-  \item{y}{y coordinate}
-  \item{x.v}{x component of velocity}
-  \item{y.v}{y component of velocity}
+  columns:
+  - `segment`: track segment
+  - `date`: time (as GMT POSIXct)
+  - `x`: x coordinate
+  - `y`: y coordinate
+  - `x.v`: x component of velocity
+  - `y.v`: y component of velocity
 }
 \description{
-Simulate a new track from the parameters of a fitted \code{rwalc}
+Simulate a new track from the parameters of a fitted `rwalc`
 model.
 }
 \details{
@@ -52,36 +52,35 @@ with the fitted track at the start point and optionally other
 specified points along the template track.
 
 Locations from the template track can be marked as fixed with the
-\code{fixed} argument. This should either be \code{NULL} or a
-vector with an entry for each location, with entries indicating
-\itemize{
-   \item{0} the location is not fixed
-   \item{1} the location is fixed
-   \item{2} the location is fixed and the point may be a cusp
+`fixed` argument. This should either be `NULL` or a
+vector with an entry for each location, with entries indicating:
+
+- 0: the location is not fixed
+- 1: the location is fixed
+- 2: the location is fixed and the point may be a cusp
             (autocorrelation is reset).
-}
 
 In the current implementation the first location in each segment
-must be fixed.  The \code{fixed.err} parameter specifies the
+must be fixed.  The `fixed.err` parameter specifies the
 covariance of the error in the fixed points, allowing the user to
 control how acccurately the simulated track reproduces the four
 components (locations and velocities) of the fixed points.
 
 Additional constraints can be placed on the path by rejection
-sampling through the function \code{point.check}.  This function
+sampling through the function `point.check`.  This function
 must accept a time, x and y and return a logical indicating
 whether the point is acceptable.  For example, the track can be
-constrained to the ocean by supplying a \code{point.check}
+constrained to the ocean by supplying a `point.check`
 function that compares the state to a land mask and returns
-\code{FALSE} for locations on land.
+`FALSE` for locations on land.
 
-The \code{point.accept} can be used to mark points that should not
+The `point.accept` can be used to mark points that should not
 be checked in the rejection step.  Currently this defaults to the
-value of \code{fixed} - so by default fixed points are never
+value of `fixed` - so by default fixed points are never
 checked.
 
 Tracks are simulated in the plane.  There is is no polar
-correction and without a suitable \code{point.check} function,
-there is nothing prevent the track extending outside the [-90,90]
+correction and without a suitable `point.check` function,
+there is nothing prevent the track extending outside the \[-90,90\]
 latitudinal limits.
 }

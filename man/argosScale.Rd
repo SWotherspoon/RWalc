@@ -12,9 +12,9 @@ argosScale(data, class)
 \item{class}{Column in data containing the Argos location classes.}
 }
 \value{
-The input dataframe with the appended columns
-\item{\code{x.se}}{error scaling factor for longitude}
-\item{\code{y.se}}{error scaling factor for latitude}
+The input dataframe with the appended columns:
+- `x.se`: error scaling factor for longitude
+- `y.se`: error scaling factor for latitude
 }
 \description{
 Create a dataframe of the multiplicative scaling factors for

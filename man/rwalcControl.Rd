@@ -2,7 +2,7 @@
 % Please edit documentation in R/RWalc.R
 \name{rwalcControl}
 \alias{rwalcControl}
-\title{Control Values for \code{rwalc}.}
+\title{Control Values for `rwalc`.}
 \usage{
 rwalcControl(optim = c("nlminb", "optim"), verbose = FALSE, ...)
 }
@@ -14,23 +14,23 @@ rwalcControl(optim = c("nlminb", "optim"), verbose = FALSE, ...)
 \item{...}{control parameters for the chosen optimizer}
 }
 \value{
-Returns a list with components
-  \item{\code{optim}}{the name of the numerical optimizer as a
-  string, "nlminb" or "optim"}
-  \item{\code{verbose}}{should tracing information be reported}
-  \item{\code{control}}{list of control parameters for the optimizer}
+Returns a list with components:
+  - `optim`: the name of the numerical optimizer as a
+  string, "nlminb" or "optim"
+  - `verbose`: should tracing information be reported
+  - `control`: list of control parameters for the optimizer
 }
 \description{
-\code{rwalcControl} selects the numerical minimizer and associated
-control parameters used by \code{rwalc}.
+`rwalcControl` selects the numerical minimizer and associated
+control parameters used by `rwalc`.
 }
 \details{
 The numerical minimization function used to fit the model is
-selected by the \code{method} argument.  Additional control
+selected by the `method` argument.  Additional control
 parameters specific to the chosen minimizer can be set though the
-dots argument.  See \code{\link{nlminb}} and \code{\link{optim}}
+dots argument.  See `nlminb` and `optim`
 for available options.
 }
 \seealso{
-\code{\link{nlminb}}, \code{\link{optim}}.
+`nlminb`, `optim`.
 }

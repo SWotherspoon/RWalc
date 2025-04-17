@@ -17,9 +17,9 @@
 
 \item{which}{Select the plots to display (see details).}
 
-\item{segment}{Select the segments to display (\code{NULL} displays all)}
+\item{segment}{Select the segments to display (`NULL` displays all)}
 
-\item{ask}{if \code{TRUE}, user is asked before each plot is displayed.}
+\item{ask}{if `TRUE`, user is asked before each plot is displayed.}
 
 \item{...}{Currently ignored}
 }
@@ -31,6 +31,6 @@ Each plot displays the fitted track (blue) and an approximate 95%
 confidence interval (grey) together with the observed locations
 (red).  The first two plots display the coordinate profiles of the
 track over time, while the third plot shows the track.  A subset
-of the plots to display can be selected with the \code{which}
+of the plots to display can be selected with the `which`
 argument.
 }

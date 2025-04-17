@@ -22,13 +22,13 @@ segments and times for which to predict locations.}
 \item{loess.span}{Span used in the loess smooth.}
 }
 \value{
-Returns a dataframe with columns
-  \item{segment}{track segment}
-  \item{date}{time (as GMT POSIXct)}
-  \item{observed}{whether this was an observed time}
-  \item{predicted}{whether this was a predicted time}
-  \item{x}{x coordinate}
-  \item{y}{y coordinate}
+Returns a dataframe with columns:
+  - `segment`: track segment
+  - `date`: time (as GMT POSIXct)
+  - `observed`: whether this was an observed time
+  - `predicted`: whether this was a predicted time
+  - `x`: x coordinate
+  - `y`: y coordinate
 }
 \description{
 Interpolate a track to a given set of time points by one of
@@ -40,39 +40,36 @@ segments may represent either distinct segments of a single track,
 or distinct tracks that may overlap in time.
 
 The input track must is given as a dataframe where each row is an
-observed location, with columns
-\tabular{ll}{
-\code{segment} \tab integer label for the segment (optional)            \cr
-\code{date} \tab observation time (GMT POSIXct) \cr
-\code{x} \tab observed x coordinate \cr
-\code{y} \tab observed y coordinate \cr
-\code{x.se} \tab standard error of the x coordinate (optional) \cr
-\code{y.se} \tab standard error of the y coordinate (optional) \cr
-}
+observed location, with columns:
+
+- `segment`: integer label for the segment (optional)
+- `date`: observation time (GMT POSIXct)
+- `x`: observed x coordinate
+- `y`: observed y coordinate
+- `x.se`: standard error of the x coordinate (optional)
+- `y.se`: standard error of the y coordinate (optional)
+
 It is assumed the input dataframe is ordered by segment and by
 date within segment.
 
-The \code{predict} argument specifies prediction times for which
+The `predict` argument specifies prediction times for which
 locations along the track will be predicted.  When the track
 consists of a single segment, these argument may be a vector of
-POSIXct times, otherwise it must be a dataframe with columns
+POSIXct times, otherwise it must be a dataframe with columns:
 
-\tabular{ll}{
-\code{segment} \tab track segment (integer, optional) \cr
-\code{date} \tab prediction time (as GMT POSIXct)
-}
+- `segment`: track segment (integer, optional)
+- `date`: prediction time (as GMT POSIXct)
 
 The fitted track is returned as a dataframe containing both the
 original and predicted locations.  To obtain just the predicted
-locations, the dataframe should be subset by the \code{predicted}
+locations, the dataframe should be subset by the `predicted`
 column.
 
-Several interpolation/smoothing methods are available
-\describe{
-  \item{\code{"approx"}}{linear interpolation in x and y}
-  \item{\code{"loess"}}{loess smoothing in x and y}
-  \item{\code{"gc"}}{Assumes x is longitude and y is latitude and
-  interpolates along a great circle}
-  \item{\code{"mean"}}{the track is replaced by its weighted centroid}
-}
+Several interpolation/smoothing methods are available:
+
+- `"approx"`: linear interpolation in x and y
+- `"loess"`: loess smoothing in x and y
+- `"gc"`: Assumes x is longitude and y is latitude and
+  interpolates along a great circle
+- `"mean"`: the track is replaced by its weighted centroid
 }

@@ -19,19 +19,19 @@ should be returned.}
 }
 \value{
 Returns a dataframe of fitted track locations
-with columns
-  \item{segment}{track segment}
-  \item{date}{time (as GMT POSIXct)}
-  \item{x}{x coordinate}
-  \item{y}{y coordinate}
-  \item{x.v}{x component of velocity}
-  \item{y.v}{y component of velocity}
-  \item{x.se}{standard error of x coordinate}
-  \item{y.se}{standard error of y coordinate}
-  \item{x.v.se}{standard error of x component of velocity}
-  \item{y.v.se}{standard error of x component of velocity}
-The velocities are omitted when \code{vel} is \code{FALSE} and the
-standard errors are omitted when \code{se} is \code{FALSE}.
+with columns:
+  - `segment`: track segment
+  - `date`: time (as GMT POSIXct)
+  - `x`: x coordinate
+  - `y`: y coordinate
+  - `x.v`: x component of velocity
+  - `y.v`: y component of velocity
+  - `x.se`: standard error of x coordinate
+  - `y.se`: standard error of y coordinate
+  - `x.v.se`: standard error of x component of velocity
+  - `y.v.se`: standard error of x component of velocity
+The velocities are omitted when `vel` is `FALSE` and the
+standard errors are omitted when `se` is `FALSE`.
 }
 \description{
 Subset the fitted track to return only those locations that

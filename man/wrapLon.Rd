@@ -22,9 +22,9 @@ These functions wrap and unwrap a sequence of longitudes around
 the dateline.
 }
 \details{
-The \code{wrapLon} function wraps the longitudes back into the
-interval [lmin,lmin+360).  The \code{unwrapLon} function unwraps a
-sequence of longitudes so the the initial point lies in
-[lmin,lmin+360), but the subsequent longitudes in the sequence may
+The `wrapLon` function wraps the longitudes back into the
+interval \[lmin,lmin+360).  The `unwrapLon` function unwraps a
+sequence of longitudes so the initial point lies in
+\[lmin,lmin+360), but the subsequent longitudes in the sequence may
 wander outside that range.
 }

@@ -14,13 +14,13 @@ systemMatrices(beta, sigma, dt)
 \item{dt}{Time step.}
 }
 \value{
-A list with components
-  \item{\code{A}}{transition matrix}
-  \item{\code{Q}}{innovation covariance matrix}
+A list with components:
+  - `A`: transition matrix
+  - `Q`: innovation covariance matrix
 }
 \description{
-Construct the transition matrix \code{A} and innovation
-covariance matrix \code{Q} for the continuous time random walk
-model corresponding to parameters \code{beta}, \code{sigma} and
-time step \code{dt}.
+Construct the transition matrix `A` and innovation
+covariance matrix `Q` for the continuous time random walk
+model corresponding to parameters `beta`, `sigma` and
+time step `dt`.
 }
